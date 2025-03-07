@@ -34,8 +34,8 @@ This Python script allows you to copy playlists from Spotify to YouTube Music. I
 ### Clone the Repository
 
 ```sh
-git clone https://github.com/your-repo/spotify-to-ytm.git
-cd spotify-to-ytm
+git clone https://github.com/mahdi-y/Spotify2YoutubeMusic.git
+cd Spotify2YoutubeMusic
 ```
 
 ### Set Up a Virtual Environment (Optional but Recommended)
