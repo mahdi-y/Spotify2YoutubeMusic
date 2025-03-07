@@ -12,7 +12,7 @@ headers_file = "raw_headers.txt"
 SPOTIFY_CLIENT_ID = ''
 SPOTIFY_CLIENT_SECRET = ''
 SPOTIFY_REDIRECT_URI = 'http://127.0.0.1:8888/callback'
-SPOTIFY_SCOPE = "playlist-read-private playlist-read-collaborative"
+SPOTIFY_SCOPE = "playlist-read-private playlist-read-collaborative user-library-read"  # Added user-library-read for liked songs
 
 with open(headers_file, "r", encoding="utf-8") as file:
     headers_raw = file.read()
@@ -27,7 +27,6 @@ sp_oauth = SpotifyOAuth(client_id=SPOTIFY_CLIENT_ID,
 sp = spotipy.Spotify(auth_manager=sp_oauth)
 
 # === YOUTUBE MUSIC CONFIGURATION ===
-# Initialize YTMusic with your headers file (create this file by following ytmusicapi setup instructions)
 YTMUSIC_HEADERS_FILE = 'browser.json'  # Path to your headers file
 ytmusic = YTMusic(YTMUSIC_HEADERS_FILE)
 
@@ -44,6 +43,24 @@ def list_spotify_playlists():
     else:
         print("No playlists found!")
         return []
+
+# Function to fetch liked songs from Spotify
+def get_spotify_liked_songs():
+    liked_songs = []
+    results = sp.current_user_saved_tracks()
+    while results:
+        for item in results['items']:
+            track = item['track']
+            if track:
+                artist_name = track['artists'][0]['name']
+                track_name = track['name']
+                liked_songs.append(f"{artist_name} - {track_name}")
+        # Handle pagination
+        if results['next']:
+            results = sp.next(results)
+        else:
+            break
+    return liked_songs
 
 # Function to fetch tracks from a Spotify playlist
 def get_spotify_playlist_tracks(playlist_id):
@@ -121,49 +138,90 @@ def add_tracks_to_ytm_playlist(playlist_id, track_ids, batch_size=10, retry_atte
         print(f"Failed to add tracks to playlist ID: {playlist_id}")
         print(e)
 
-# Main function to copy playlists
-def copy_playlists_from_spotify_to_ytm():
-    # Step 1: List Spotify playlists
-    spotify_playlists = list_spotify_playlists()
-    if not spotify_playlists:
-        return
+# Main function to copy playlists and liked songs
+def copy_spotify_to_ytm():
+    while True:  # Loop to allow the user to choose again after finishing
+        # Ask user to choose whether to copy playlists or liked songs
+        choice = input("Do you want to copy (1) Playlists or (2) Liked Songs from Spotify? Enter 1 or 2 (or type 'exit' to quit): ")
 
-    # Step 2: Select a playlist to copy
-    playlist_choice = int(input("Enter the number of the playlist you want to copy: ")) - 1
-    selected_playlist = spotify_playlists[playlist_choice]
-    playlist_name = selected_playlist['name']
-    playlist_id = selected_playlist['id']
+        if choice.lower() == 'exit':
+            print("Exiting...")
+            break  # Exit the loop and end the program
 
-    # Step 3: Fetch tracks from the selected Spotify playlist
-    print(f"Fetching tracks from Spotify playlist: {playlist_name}")
-    spotify_tracks = get_spotify_playlist_tracks(playlist_id)
-    if not spotify_tracks:
-        print("No tracks found in the selected playlist.")
-        return
+        if choice == "1":
+            # Copy playlists
+            spotify_playlists = list_spotify_playlists()
+            if not spotify_playlists:
+                return
 
-    # Step 4: Create a new YouTube Music playlist
-    ytm_playlist_id = create_ytm_playlist(playlist_name)
-    if not ytm_playlist_id:
-        return
+            # Select a playlist to copy
+            playlist_choice = int(input("Enter the number of the playlist you want to copy: ")) - 1
+            selected_playlist = spotify_playlists[playlist_choice]
+            playlist_name = selected_playlist['name']
+            playlist_id = selected_playlist['id']
 
-    # Step 5: Search for each track on YouTube Music and collect video IDs
-    print("Searching for tracks on YouTube Music...")
-    ytm_video_ids = []
-    for track in spotify_tracks:
-        video_id = search_track_on_ytm(track)
-        if video_id:
-            ytm_video_ids.append(video_id)
-        else:
-            print(f"Skipping track: {track}")
+            # Fetch tracks from the selected Spotify playlist
+            print(f"Fetching tracks from Spotify playlist: {playlist_name}")
+            spotify_tracks = get_spotify_playlist_tracks(playlist_id)
+            if not spotify_tracks:
+                print("No tracks found in the selected playlist.")
+                return
 
-    # Debugging: Print collected video IDs
-    print(f"Collected video IDs: {ytm_video_ids}")
+            # Create a new YouTube Music playlist
+            ytm_playlist_id = create_ytm_playlist(playlist_name)
+            if not ytm_playlist_id:
+                return
 
-    # Step 6: Add the found tracks to the YouTube Music playlist
-    if ytm_video_ids:
-        add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
-    else:
-        print("No tracks were found on YouTube Music.")
+            # Search for each track on YouTube Music and collect video IDs
+            print("Searching for tracks on YouTube Music...")
+            ytm_video_ids = []
+            for track in spotify_tracks:
+                video_id = search_track_on_ytm(track)
+                if video_id:
+                    ytm_video_ids.append(video_id)
+                else:
+                    print(f"Skipping track: {track}")
+
+            # Debugging: Print collected video IDs
+            print(f"Collected video IDs: {ytm_video_ids}")
+
+            # Add the found tracks to the YouTube Music playlist
+            if ytm_video_ids:
+                add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
+            else:
+                print("No tracks were found on YouTube Music.")
+
+        elif choice == "2":
+            # Copy liked songs
+            liked_songs = get_spotify_liked_songs()
+            if not liked_songs:
+                print("No liked songs found on Spotify.")
+                return
+
+            # Create a new YouTube Music playlist
+            playlist_name = "Liked Songs from Spotify"
+            ytm_playlist_id = create_ytm_playlist(playlist_name)
+            if not ytm_playlist_id:
+                return
+
+            # Search for each track on YouTube Music and collect video IDs
+            print("Searching for liked songs on YouTube Music...")
+            ytm_video_ids = []
+            for track in liked_songs:
+                video_id = search_track_on_ytm(track)
+                if video_id:
+                    ytm_video_ids.append(video_id)
+                else:
+                    print(f"Skipping track: {track}")
+
+            # Debugging: Print collected video IDs
+            print(f"Collected video IDs: {ytm_video_ids}")
+
+            # Add the found tracks to the YouTube Music playlist
+            if ytm_video_ids:
+                add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
+            else:
+                print("No liked songs were found on YouTube Music.")
 
 if __name__ == "__main__":
-    copy_playlists_from_spotify_to_ytm()
+    copy_spotify_to_ytm()
