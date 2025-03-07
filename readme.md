@@ -52,7 +52,8 @@ pip install -r requirements.txt
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
 2. Create an app and obtain the **Client ID** and **Client Secret**.
 3. Set the **Redirect URI** to `http://127.0.0.1:8888/callback`.
-4. Replace the placeholders in the script with your credentials.
+4. Check **Web API** in the section right under **Redirect URI**.
+5. Replace the placeholders in the script with your credentials (In **copy_playlists.py** file).
     `SPOTIFY_CLIENT_ID = 'Your-Spotify-Client-ID'`
     `SPOTIFY_CLIENT_SECRET = 'Your-Spotify-Client-Secret'`
 
