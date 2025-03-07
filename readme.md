@@ -8,8 +8,7 @@
 4. [Installation](#installation)
 5. [Usage](#usage)
 6. [Troubleshooting](#troubleshooting)
-7. [License](#license)
-8. [Acknowledgments](#acknowledgments)
+7. [Acknowledgments](#acknowledgments)
 
 ## Introduction
 
@@ -54,15 +53,19 @@ pip install -r requirements.txt
 2. Create an app and obtain the **Client ID** and **Client Secret**.
 3. Set the **Redirect URI** to `http://127.0.0.1:8888/callback`.
 4. Replace the placeholders in the script with your credentials.
+    `SPOTIFY_CLIENT_ID = 'Your-Spotify-Client-ID'`
+    `SPOTIFY_CLIENT_SECRET = 'Your-Spotify-Client-Secret'`
 
 ### Generate YouTube Music Credentials
 
 1. Open YouTube Music in **Firefox** and log in.
 2. Press **F12** or right-click and select **Inspect** to open the browser's developer tools.
-3. Go to the **Network** tab and filter requests by `/browse`.
-4. Select a request and locate the **Request Headers** section.
-5. Click the **RAW** toggle button to view raw headers.
-6. Copy the content and paste it into `raw_headers.txt` in the project directory.
+3. Go to the **Network** tab and click on **Reload**.
+4. Go back to YouTube Music's interface and click on **Library**.
+5. Go to the **Network** tab again and filter requests by `/browse`.
+6. Select a request and locate the **Request Headers** section (It must be a **POST** request and of **Status 200**).
+7. Click the **RAW** toggle button to view raw headers.
+8. Copy the content and paste it into `raw_headers.txt` in the project directory.
 
 ### Run the Script
 
@@ -74,12 +77,7 @@ Follow the on-screen instructions to select and copy a playlist.
 
 ## Troubleshooting
 
-- If you encounter issues with **track search accuracy**, try manually searching and adjusting the query format.
 - If an error occurs related to **invalid YouTube Music credentials**, it might be because they expire after some time. You will need to regenerate the credentials by following the **Generate YouTube Music Credentials** steps again.
-
-## License
-
-This project is licensed under the MIT License.
 
 ## Acknowledgments
 

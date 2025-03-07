@@ -9,8 +9,8 @@ from ytmusicapi import setup
 headers_file = "raw_headers.txt"
 
 # === SPOTIFY CONFIGURATION ===
-SPOTIFY_CLIENT_ID = ''
-SPOTIFY_CLIENT_SECRET = ''
+SPOTIFY_CLIENT_ID = 'Your-Spotify-Client-ID'
+SPOTIFY_CLIENT_SECRET = 'Your-Spotify-Client-Secret'
 SPOTIFY_REDIRECT_URI = 'http://127.0.0.1:8888/callback'
 SPOTIFY_SCOPE = "playlist-read-private playlist-read-collaborative user-library-read"  # Added user-library-read for liked songs
 
