@@ -44,3 +44,6 @@ MANIFEST
 # Logs and databases
 *.log
 *.sqlite3
+
+# Project related files
+browser.json

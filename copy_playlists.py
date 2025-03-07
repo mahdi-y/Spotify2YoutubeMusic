@@ -12,7 +12,7 @@ headers_file = "raw_headers.txt"
 SPOTIFY_CLIENT_ID = 'Your-Spotify-Client-ID'
 SPOTIFY_CLIENT_SECRET = 'Your-Spotify-Client-Secret'
 SPOTIFY_REDIRECT_URI = 'http://127.0.0.1:8888/callback'
-SPOTIFY_SCOPE = "playlist-read-private playlist-read-collaborative user-library-read"  # Added user-library-read for liked songs
+SPOTIFY_SCOPE = "playlist-read-private playlist-read-collaborative user-library-read user-follow-read"  # Added user-follow-read for followed artists
 
 with open(headers_file, "r", encoding="utf-8") as file:
     headers_raw = file.read()
@@ -138,11 +138,43 @@ def add_tracks_to_ytm_playlist(playlist_id, track_ids, batch_size=10, retry_atte
         print(f"Failed to add tracks to playlist ID: {playlist_id}")
         print(e)
 
-# Main function to copy playlists and liked songs
+# Function to fetch followed artists from Spotify
+def get_spotify_followed_artists():
+    followed_artists = []
+    results = sp.current_user_followed_artists(limit=50)  # Fetch up to 50 artists at a time
+    while results:
+        for artist in results['artists']['items']:
+            followed_artists.append(artist['name'])
+        # Handle pagination
+        if results['artists']['next']:
+            results = sp.next(results['artists'])
+        else:
+            break
+    return followed_artists
+
+# Function to subscribe to artists on YouTube Music
+def subscribe_to_ytm_artists(artist_names):
+    for artist_name in artist_names:
+        try:
+            # Search for the artist on YouTube Music
+            search_results = ytmusic.search(query=artist_name, filter="artists")
+            if search_results:
+                # Get the first result (most relevant artist)
+                artist_id = search_results[0]['browseId']
+                # Subscribe to the artist
+                ytmusic.subscribe_artists([artist_id])
+                print(f"Subscribed to artist: {artist_name} (ID: {artist_id})")
+            else:
+                print(f"No results found for artist: {artist_name}")
+        except Exception as e:
+            print(f"Failed to subscribe to artist: {artist_name}")
+            print(e)
+
+# Main function to copy playlists, liked songs, and followed artists
 def copy_spotify_to_ytm():
     while True:  # Loop to allow the user to choose again after finishing
-        # Ask user to choose whether to copy playlists or liked songs
-        choice = input("Do you want to copy (1) Playlists or (2) Liked Songs from Spotify? Enter 1 or 2 (or type 'exit' to quit): ")
+        # Ask user to choose whether to copy playlists, liked songs, or followed artists
+        choice = input("Do you want to copy (1) Playlists, (2) Liked Songs, or (3) Followed Artists from Spotify? Enter 1, 2, or 3 (or type 'exit' to quit): ")
 
         if choice.lower() == 'exit':
             print("Exiting...")
@@ -222,6 +254,18 @@ def copy_spotify_to_ytm():
                 add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
             else:
                 print("No liked songs were found on YouTube Music.")
+
+        elif choice == "3":
+            # Copy followed artists
+            followed_artists = get_spotify_followed_artists()
+            if not followed_artists:
+                print("No followed artists found on Spotify.")
+                return
+
+            # Subscribe to the artists on YouTube Music
+            print("Subscribing to artists on YouTube Music...")
+            subscribe_to_ytm_artists(followed_artists)
+            print("Finished subscribing to artists.")
 
 if __name__ == "__main__":
     copy_spotify_to_ytm()
