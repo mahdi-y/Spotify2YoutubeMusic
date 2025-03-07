@@ -18,6 +18,8 @@ This Python script allows you to copy playlists from Spotify to YouTube Music. I
 
 - Authenticate with Spotify and YouTube Music
 - Fetch your Spotify playlists
+- Import Liked Songs from Spotify
+- Import Followed Artists from Spotify
 - Search for tracks on YouTube Music
 - Create a new playlist on YouTube Music
 - Add matched tracks to the newly created YouTube Music playlist
@@ -74,7 +76,7 @@ pip install -r requirements.txt
 python copy_playlists.py
 ```
 
-Follow the on-screen instructions to select and copy a playlist.
+Follow the on-screen instructions to select and copy a playlist, liked songs or followed artists.
 
 ## Troubleshooting
 
