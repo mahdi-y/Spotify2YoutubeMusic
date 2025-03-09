@@ -35,6 +35,8 @@ This Python script allows you to copy playlists from Spotify to YouTube Music. I
 
 ```sh
 git clone https://github.com/mahdi-y/Spotify2YoutubeMusic.git
+```
+```sh
 cd Spotify2YoutubeMusic
 ```
 
@@ -44,7 +46,11 @@ cd Spotify2YoutubeMusic
 
 ```sh
 python -m venv .venv
+```
+```sh
 source .venv/bin/activate  
+```
+```sh
 pip install -r requirements.txt
 ```
 
@@ -52,7 +58,11 @@ pip install -r requirements.txt
 
 ```sh
 python -m venv .venv
-.venv/bin/activate  
+```
+```sh
+.venv\Scripts\activate  
+```
+```sh
 pip install -r requirements.txt
 ```
 
