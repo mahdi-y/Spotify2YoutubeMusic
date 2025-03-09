@@ -16,19 +16,18 @@ This Python script allows you to copy playlists from Spotify to YouTube Music. I
 
 ## Features
 
-- Authenticate with Spotify and YouTube Music
-- Fetch your Spotify playlists
+- Batch import your Spotify playlists
 - Import Liked Songs from Spotify
 - Import Followed Artists from Spotify
-- Search for tracks on YouTube Music
-- Create a new playlist on YouTube Music
-- Add matched tracks to the newly created YouTube Music playlist
 
 ## Requirements
 
 - Python 3.8+
 - Spotify API credentials
 - YouTube Music authentication headers
+- Command Prompt (cmd) or PowerShell (for Windows users)
+- Terminal (for Linux/macOS users)
+
 
 ## Installation
 
@@ -39,11 +38,21 @@ git clone https://github.com/mahdi-y/Spotify2YoutubeMusic.git
 cd Spotify2YoutubeMusic
 ```
 
-### Set Up a Virtual Environment (Optional but Recommended)
+### Set Up a Virtual Environment (Recommended)
+
+##### For Linux/macOS:
 
 ```sh
 python -m venv .venv
-source .venv/bin/activate  # On Windows, use .venv\Scripts\activate
+source .venv/bin/activate  
+pip install -r requirements.txt
+```
+
+##### For Windows:
+
+```sh
+python -m venv .venv
+.venv/bin/activate  
 pip install -r requirements.txt
 ```
 
@@ -56,6 +65,7 @@ pip install -r requirements.txt
 3. Set the **Redirect URI** to `http://127.0.0.1:8888/callback`.
 4. Check **Web API** in the section right under **Redirect URI**.
 5. Replace the placeholders in the script with your credentials (In **copy_playlists.py** file).
+   
     `SPOTIFY_CLIENT_ID = 'Your-Spotify-Client-ID'`
     `SPOTIFY_CLIENT_SECRET = 'Your-Spotify-Client-Secret'`
 
