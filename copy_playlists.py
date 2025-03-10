@@ -3,6 +3,7 @@ from spotipy.oauth2 import SpotifyOAuth
 from ytmusicapi import YTMusic
 import time
 from ytmusicapi import setup
+from tqdm import tqdm
 
 headers_file = "raw_headers.txt"
 
@@ -47,7 +48,6 @@ def list_spotify_playlists():
     
     return playlists
 
-
 def get_spotify_liked_songs():
     liked_songs = []
     results = sp.current_user_saved_tracks()
@@ -90,10 +90,11 @@ def create_ytm_playlist(playlist_name):
         print(e)
         return None
 
+
+
 def search_track_on_ytm(track_query):
     try:
         search_results = ytmusic.search(query=track_query, filter="songs")
-        print(f"Search results for '{track_query}': {search_results}")  
         if search_results:
             video_id = search_results[0]['videoId']
             return video_id
@@ -104,7 +105,6 @@ def search_track_on_ytm(track_query):
         print(f"Error searching for track: {track_query}")
         print(e)
         return None
-
 def add_tracks_to_ytm_playlist(playlist_id, track_ids, batch_size=10, retry_attempts=3):
     try:        
         for i in range(0, len(track_ids), batch_size):
@@ -161,78 +161,97 @@ def subscribe_to_ytm_artists(artist_names):
 def copy_spotify_to_ytm():
     while True:
         choice = input("Do you want to copy (1) Playlists, (2) Liked Songs, or (3) Followed Artists from Spotify? Enter 1, 2, or 3 (or type 'exit' to quit): ")
-
         if choice.lower() == 'exit':
             print("Exiting...")
             break
-
+        
         if choice == "1":            
             spotify_playlists = list_spotify_playlists()
             if not spotify_playlists:
                 return
-            
-            selected_indices = input("Enter the numbers of the playlists you want to copy (comma-separated, e.g., 1,3,5): ")
-            selected_indices = [int(x.strip()) - 1 for x in selected_indices.split(",") if x.strip().isdigit()]
-            
-            for idx in selected_indices:
-                if idx < 0 or idx >= len(spotify_playlists):
-                    print(f"Invalid playlist number: {idx + 1}")
-                    continue
-
-                selected_playlist = spotify_playlists[idx]
-                playlist_name = selected_playlist['name']
-                playlist_id = selected_playlist['id']
-                
-                print(f"Fetching tracks from Spotify playlist: {playlist_name}")
-                spotify_tracks = get_spotify_playlist_tracks(playlist_id)
-                if not spotify_tracks:
-                    print("No tracks found in the selected playlist.")
-                    continue
-                
-                ytm_playlist_id = create_ytm_playlist(playlist_name)
-                if not ytm_playlist_id:
-                    continue
-                
-                print("Searching for tracks on YouTube Music...")
-                ytm_video_ids = []
-                for track in spotify_tracks:
-                    video_id = search_track_on_ytm(track)
-                    if video_id:
-                        ytm_video_ids.append(video_id)
+            copy_all = input("Do you want to copy all playlists? (yes/no): ").strip().lower()
+            if copy_all == 'yes':                
+                for playlist in spotify_playlists:
+                    playlist_name = playlist['name']
+                    playlist_id = playlist['id']                    
+                    print(f"Fetching tracks from Spotify playlist: {playlist_name}")
+                    spotify_tracks = get_spotify_playlist_tracks(playlist_id)
+                    if not spotify_tracks:
+                        print(f"No tracks found in the playlist: {playlist_name}. Skipping this playlist.")
+                        continue
+                    ytm_playlist_id = create_ytm_playlist(playlist_name)
+                    if not ytm_playlist_id:
+                        continue
+                    print(f"Searching for tracks from {playlist_name} on YouTube Music...")
+                    ytm_video_ids = []
+                    for track in tqdm(spotify_tracks, desc=f"Processing {playlist_name}", unit="track"):
+                        video_id = search_track_on_ytm(track)
+                        if video_id:
+                            ytm_video_ids.append(video_id)
+                        else:
+                            print(f"Skipping track: {track}")
+                    if ytm_video_ids:
+                        add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
                     else:
-                        print(f"Skipping track: {track}")
-                
-                print(f"Collected video IDs: {ytm_video_ids}")
-
-                if ytm_video_ids:
-                    add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
-                else:
-                    print("No tracks were found on YouTube Music.")
-
+                        print(f"No tracks were found on YouTube Music for playlist: {playlist_name}")
+            else:
+                selected_indices = input("Enter the numbers of the playlists you want to copy (comma-separated, e.g., 1,3,5): ")
+                selected_indices = [int(x.strip()) - 1 for x in selected_indices.split(",") if x.strip().isdigit()]
+                for idx in selected_indices:
+                    if idx < 0 or idx >= len(spotify_playlists):
+                        print(f"Invalid playlist number: {idx + 1}")
+                        continue
+                    selected_playlist = spotify_playlists[idx]
+                    playlist_name = selected_playlist['name']
+                    playlist_id = selected_playlist['id']
+                    print(f"Fetching tracks from Spotify playlist: {playlist_name}")
+                    spotify_tracks = get_spotify_playlist_tracks(playlist_id)
+                    if not spotify_tracks:
+                        print("No tracks found in the selected playlist.")
+                        continue
+                    ytm_playlist_id = create_ytm_playlist(playlist_name)
+                    if not ytm_playlist_id:
+                        continue
+                    print("Searching for tracks on YouTube Music...")
+                    ytm_video_ids = []
+                    for track in tqdm(spotify_tracks, desc=f"Processing {playlist_name}", unit="track"):
+                        video_id = search_track_on_ytm(track)
+                        if video_id:
+                            ytm_video_ids.append(video_id)
+                        else:
+                            print(f"Skipping track: {track}")
+                    if ytm_video_ids:
+                        add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
+                    else:
+                        print("No tracks were found on YouTube Music.")
+                        
         elif choice == "2":
             liked_songs = get_spotify_liked_songs()
             if not liked_songs:
                 print("No liked songs found on Spotify.")
                 return
-
             playlist_name = "Liked Songs from Spotify"
             ytm_playlist_id = create_ytm_playlist(playlist_name)
             if not ytm_playlist_id:
                 return
-
-            ytm_video_ids = [search_track_on_ytm(track) for track in liked_songs if search_track_on_ytm(track)]
-
+            print("Searching for liked songs on YouTube Music...")
+            ytm_video_ids = []
+            for track in tqdm(liked_songs, desc="Processing Liked Songs", unit="track"):
+                video_id = search_track_on_ytm(track)
+                if video_id:
+                    ytm_video_ids.append(video_id)
+                else:
+                    print(f"Skipping track: {track}")
             if ytm_video_ids:
                 add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
             else:
                 print("No liked songs were found on YouTube Music.")
-
+                
         elif choice == "3":
             followed_artists = get_spotify_followed_artists()
             if not followed_artists:
                 print("No followed artists found on Spotify.")
                 return
-
             print("Subscribing to artists on YouTube Music...")
             subscribe_to_ytm_artists(followed_artists)
             print("Finished subscribing to artists.")
