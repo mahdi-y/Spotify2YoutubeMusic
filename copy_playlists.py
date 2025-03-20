@@ -223,16 +223,24 @@ def copy_spotify_to_ytm():
                         continue
                     print(f"Searching for tracks from {playlist_name} on YouTube Music...")
                     ytm_video_ids = []
+                    not_found_tracks = [] 
                     for track in tqdm(spotify_tracks, desc=f"Processing {playlist_name}", unit="track"):
                         video_id = search_track_on_ytm(track)
                         if video_id:
                             ytm_video_ids.append(video_id)
                         else:
+                            not_found_tracks.append(track) 
                             print(f"Skipping track: {track}")
                     if ytm_video_ids:
                         add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
                     else:
                         print(f"No tracks were found on YouTube Music for playlist: {playlist_name}")
+                    
+                    if not_found_tracks:
+                        print(f"\nTracks not found on YouTube Music for playlist '{playlist_name}':")
+                        for track in not_found_tracks:
+                            print(f"- {track}")
+                        print()
             else:
                 selection_input = input("Enter the numbers of the playlists you want to copy (comma-separated with range support, e.g., 1,3-5,8): ")
                 selected_indices = parse_playlist_selection(selection_input, len(spotify_playlists))
@@ -256,16 +264,24 @@ def copy_spotify_to_ytm():
                         continue
                     print("Searching for tracks on YouTube Music...")
                     ytm_video_ids = []
+                    not_found_tracks = []  
                     for track in tqdm(spotify_tracks, desc=f"Processing {playlist_name}", unit="track"):
                         video_id = search_track_on_ytm(track)
                         if video_id:
                             ytm_video_ids.append(video_id)
                         else:
+                            not_found_tracks.append(track)  
                             print(f"Skipping track: {track}")
                     if ytm_video_ids:
                         add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
                     else:
                         print("No tracks were found on YouTube Music.")
+                    
+                    if not_found_tracks:
+                        print(f"\nTracks not found on YouTube Music for playlist '{playlist_name}':")
+                        for track in not_found_tracks:
+                            print(f"- {track}")
+                        print()
                         
         elif choice == "2":
             liked_songs = get_spotify_liked_songs()
@@ -278,16 +294,24 @@ def copy_spotify_to_ytm():
                 return
             print("Searching for liked songs on YouTube Music...")
             ytm_video_ids = []
+            not_found_tracks = []  
             for track in tqdm(liked_songs, desc="Processing Liked Songs", unit="track"):
                 video_id = search_track_on_ytm(track)
                 if video_id:
                     ytm_video_ids.append(video_id)
                 else:
+                    not_found_tracks.append(track) 
                     print(f"Skipping track: {track}")
             if ytm_video_ids:
                 add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
             else:
                 print("No liked songs were found on YouTube Music.")
+            
+            if not_found_tracks:
+                print(f"\nLiked songs not found on YouTube Music:")
+                for track in not_found_tracks:
+                    print(f"- {track}")
+                print()
                 
         elif choice == "3":
             followed_artists = get_spotify_followed_artists()
