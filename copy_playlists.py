@@ -158,6 +158,45 @@ def subscribe_to_ytm_artists(artist_names):
             print(f"Failed to subscribe to artist: {artist_name}")
             print(e)
 
+def parse_playlist_selection(selection_input, max_playlists):
+    """
+    Parse user input for playlist selection including range support.
+    Examples:
+    - "1,3,5" -> [0, 2, 4]
+    - "1-5" -> [0, 1, 2, 3, 4]
+    - "1-3,7,9-10" -> [0, 1, 2, 6, 8, 9]
+    """
+    selected_indices = set()
+    
+    # Split by comma
+    parts = [p.strip() for p in selection_input.split(",")]
+    
+    for part in parts:
+        # Check if it's a range (contains "-")
+        if "-" in part:
+            try:
+                start, end = map(int, part.split("-"))
+                if start < 1 or end > max_playlists or start > end:
+                    print(f"Invalid range: {part}. Valid range is 1-{max_playlists}.")
+                    continue
+                # Add all indices in the range (adjusting for 0-based indexing)
+                for i in range(start-1, end):
+                    selected_indices.add(i)
+            except ValueError:
+                print(f"Invalid range format: {part}")
+        else:
+            # Handle single number
+            try:
+                idx = int(part) - 1  # Convert to 0-based index
+                if idx < 0 or idx >= max_playlists:
+                    print(f"Invalid playlist number: {part}")
+                    continue
+                selected_indices.add(idx)
+            except ValueError:
+                print(f"Invalid input: {part}")
+    
+    return sorted(list(selected_indices))
+
 def copy_spotify_to_ytm():
     while True:
         choice = input("Do you want to copy (1) Playlists, (2) Liked Songs, or (3) Followed Artists from Spotify? Enter 1, 2, or 3 (or type 'exit' to quit): ")
@@ -195,12 +234,15 @@ def copy_spotify_to_ytm():
                     else:
                         print(f"No tracks were found on YouTube Music for playlist: {playlist_name}")
             else:
-                selected_indices = input("Enter the numbers of the playlists you want to copy (comma-separated, e.g., 1,3,5): ")
-                selected_indices = [int(x.strip()) - 1 for x in selected_indices.split(",") if x.strip().isdigit()]
+                selection_input = input("Enter the numbers of the playlists you want to copy (comma-separated with range support, e.g., 1,3-5,8): ")
+                selected_indices = parse_playlist_selection(selection_input, len(spotify_playlists))
+                
+                if not selected_indices:
+                    print("No valid playlists selected.")
+                    continue
+                    
+                print(f"Selected {len(selected_indices)} playlists.")
                 for idx in selected_indices:
-                    if idx < 0 or idx >= len(spotify_playlists):
-                        print(f"Invalid playlist number: {idx + 1}")
-                        continue
                     selected_playlist = spotify_playlists[idx]
                     playlist_name = selected_playlist['name']
                     playlist_id = selected_playlist['id']
