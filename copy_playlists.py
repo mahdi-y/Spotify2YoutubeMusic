@@ -27,6 +27,46 @@ sp = spotipy.Spotify(auth_manager=sp_oauth)
 YTMUSIC_HEADERS_FILE = 'browser.json'  
 ytmusic = YTMusic(YTMUSIC_HEADERS_FILE)
 
+def get_ytm_playlist_by_name(playlist_name):
+    """
+    Returns the playlist dict if a playlist with the given name exists, else None.
+    """
+    try:
+        playlists = ytmusic.get_library_playlists()
+        for playlist in playlists:
+            if playlist['title'].strip().lower() == playlist_name.strip().lower():
+                return playlist
+        return None
+    except Exception as e:
+        print(f"Error fetching YouTube Music playlists: {e}")
+        return None
+
+def get_ytm_playlist_song_video_ids(playlist_id):
+    """
+    Returns a set of videoIds for all songs in the given YouTube Music playlist.
+    """
+    video_ids = set()
+    try:
+        playlist = ytmusic.get_playlist(playlist_id, limit=10000)
+        for track in playlist.get('tracks', []):
+            if track and 'videoId' in track:
+                video_ids.add(track['videoId'])
+    except Exception as e:
+        print(f"Error fetching playlist tracks: {e}")
+    return video_ids
+
+def create_or_get_ytm_playlist(playlist_name):
+    """
+    Returns (playlist_id, already_exists)
+    """
+    existing = get_ytm_playlist_by_name(playlist_name)
+    if existing:
+        print(f"Found existing YouTube Music playlist: {playlist_name} (ID: {existing['playlistId']})")
+        return existing['playlistId'], True
+    else:
+        playlist_id = create_ytm_playlist(playlist_name)
+        return playlist_id, False
+
 def list_spotify_playlists():
     playlists = []
     limit = 50  
@@ -90,8 +130,6 @@ def create_ytm_playlist(playlist_name):
         print(e)
         return None
 
-
-
 def search_track_on_ytm(track_query):
     try:
         search_results = ytmusic.search(query=track_query, filter="songs")
@@ -99,12 +137,12 @@ def search_track_on_ytm(track_query):
             video_id = search_results[0]['videoId']
             return video_id
         else:
-            print(f"No results found for: {track_query}")
             return None
     except Exception as e:
         print(f"Error searching for track: {track_query}")
         print(e)
         return None
+
 def add_tracks_to_ytm_playlist(playlist_id, track_ids, batch_size=10, retry_attempts=3):
     try:        
         for i in range(0, len(track_ids), batch_size):
@@ -218,23 +256,35 @@ def copy_spotify_to_ytm():
                     if not spotify_tracks:
                         print(f"No tracks found in the playlist: {playlist_name}. Skipping this playlist.")
                         continue
-                    ytm_playlist_id = create_ytm_playlist(playlist_name)
+                    
+                    # Check if playlist already exists
+                    ytm_playlist_id, already_exists = create_or_get_ytm_playlist(playlist_name)
                     if not ytm_playlist_id:
                         continue
+                    
+                    # Get existing songs if playlist already exists
+                    existing_video_ids = set()
+                    if already_exists:
+                        print("Checking for already existing songs in the YouTube Music playlist...")
+                        existing_video_ids = get_ytm_playlist_song_video_ids(ytm_playlist_id)
+                    
                     print(f"Searching for tracks from {playlist_name} on YouTube Music...")
                     ytm_video_ids = []
                     not_found_tracks = [] 
                     for track in tqdm(spotify_tracks, desc=f"Processing {playlist_name}", unit="track"):
                         video_id = search_track_on_ytm(track)
                         if video_id:
-                            ytm_video_ids.append(video_id)
+                            if video_id not in existing_video_ids:
+                                ytm_video_ids.append(video_id)
                         else:
                             not_found_tracks.append(track) 
                             print(f"Skipping track: {track}")
+                    
                     if ytm_video_ids:
                         add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
+                        print(f"Added {len(ytm_video_ids)} new tracks to playlist: {playlist_name}")
                     else:
-                        print(f"No tracks were found on YouTube Music for playlist: {playlist_name}")
+                        print(f"No new tracks to add for playlist: {playlist_name}")
                     
                     if not_found_tracks:
                         print(f"\nTracks not found on YouTube Music for playlist '{playlist_name}':")
@@ -259,23 +309,35 @@ def copy_spotify_to_ytm():
                     if not spotify_tracks:
                         print("No tracks found in the selected playlist.")
                         continue
-                    ytm_playlist_id = create_ytm_playlist(playlist_name)
+                    
+                    # Check if playlist already exists
+                    ytm_playlist_id, already_exists = create_or_get_ytm_playlist(playlist_name)
                     if not ytm_playlist_id:
                         continue
+                    
+                    # Get existing songs if playlist already exists
+                    existing_video_ids = set()
+                    if already_exists:
+                        print("Checking for already existing songs in the YouTube Music playlist...")
+                        existing_video_ids = get_ytm_playlist_song_video_ids(ytm_playlist_id)
+                    
                     print("Searching for tracks on YouTube Music...")
                     ytm_video_ids = []
                     not_found_tracks = []  
                     for track in tqdm(spotify_tracks, desc=f"Processing {playlist_name}", unit="track"):
                         video_id = search_track_on_ytm(track)
                         if video_id:
-                            ytm_video_ids.append(video_id)
+                            if video_id not in existing_video_ids:
+                                ytm_video_ids.append(video_id)
                         else:
                             not_found_tracks.append(track)  
                             print(f"Skipping track: {track}")
+                    
                     if ytm_video_ids:
                         add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
+                        print(f"Added {len(ytm_video_ids)} new tracks to playlist: {playlist_name}")
                     else:
-                        print("No tracks were found on YouTube Music.")
+                        print(f"No new tracks to add for playlist: {playlist_name}")
                     
                     if not_found_tracks:
                         print(f"\nTracks not found on YouTube Music for playlist '{playlist_name}':")
@@ -289,24 +351,36 @@ def copy_spotify_to_ytm():
                 print("No liked songs found on Spotify.")
                 return
             playlist_name = "Liked Songs from Spotify"
-            ytm_playlist_id = create_ytm_playlist(playlist_name)
+            
+            # Check if playlist already exists
+            ytm_playlist_id, already_exists = create_or_get_ytm_playlist(playlist_name)
             if not ytm_playlist_id:
                 return
+
+            # Get existing songs in the playlist to avoid duplicates
+            existing_video_ids = set()
+            if already_exists:
+                print("Checking for already existing songs in the YouTube Music playlist...")
+                existing_video_ids = get_ytm_playlist_song_video_ids(ytm_playlist_id)
+
             print("Searching for liked songs on YouTube Music...")
             ytm_video_ids = []
             not_found_tracks = []  
             for track in tqdm(liked_songs, desc="Processing Liked Songs", unit="track"):
                 video_id = search_track_on_ytm(track)
                 if video_id:
-                    ytm_video_ids.append(video_id)
+                    if video_id not in existing_video_ids:
+                        ytm_video_ids.append(video_id)
                 else:
                     not_found_tracks.append(track) 
                     print(f"Skipping track: {track}")
+            
             if ytm_video_ids:
                 add_tracks_to_ytm_playlist(ytm_playlist_id, ytm_video_ids)
+                print(f"Added {len(ytm_video_ids)} new liked songs to YouTube Music.")
             else:
-                print("No liked songs were found on YouTube Music.")
-            
+                print("No new liked songs to add to YouTube Music.")
+
             if not_found_tracks:
                 print(f"\nLiked songs not found on YouTube Music:")
                 for track in not_found_tracks:
