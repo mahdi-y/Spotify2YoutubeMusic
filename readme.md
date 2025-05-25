@@ -27,6 +27,7 @@ _________              __  .__  _____       ________ _____.___.              __ 
 5. [Usage](#usage)
 6. [Troubleshooting](#troubleshooting)
 7. [Acknowledgments](#acknowledgments)
+8. [License](#license)
 
 ---
 
@@ -148,6 +149,12 @@ flowchart TD
 
 - Thanks to [Sigma67](https://github.com/sigma67/ytmusicapi) for `ytmusicapi`.
 - Thanks to [Spotipy](https://spotipy.readthedocs.io/) for Spotify API access.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
