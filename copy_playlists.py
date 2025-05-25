@@ -8,8 +8,8 @@ from tqdm import tqdm
 headers_file = "raw_headers.txt"
 
 # === SPOTIFY CONFIGURATION ===
-SPOTIFY_CLIENT_ID = 'Your-Spotify-Client-ID'
-SPOTIFY_CLIENT_SECRET = 'Your-Spotify-Client-Secret'
+SPOTIFY_CLIENT_ID = '3f263a16547e478494ebbd3312d3ac21'
+SPOTIFY_CLIENT_SECRET = '4e270550ce424c04a69cd6598e69125b'
 SPOTIFY_REDIRECT_URI = 'http://127.0.0.1:8888/callback'
 SPOTIFY_SCOPE = "playlist-read-private playlist-read-collaborative user-library-read user-follow-read"  
 
