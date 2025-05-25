@@ -3,7 +3,8 @@
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python)
 ![Spotify API](https://img.shields.io/badge/Spotify-API-green?logo=spotify)
 ![YouTube Music](https://img.shields.io/badge/YouTube%20Music-API-red?logo=youtube)
-![License](https://img.shields.io/github/license/mahdi-y/Spotify2YoutubeMusic)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+![GitHub Repo stars](https://img.shields.io/github/stars/mahdi-y/Spotify2YoutubeMusic?style=social)
 
 ---
 
