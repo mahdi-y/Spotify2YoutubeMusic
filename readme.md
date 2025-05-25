@@ -1,4 +1,22 @@
-# Spotify to YouTube Music Playlist Copier
+# Spotify YouTube Music Playlist Copier
+
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python)
+![Spotify API](https://img.shields.io/badge/Spotify-API-green?logo=spotify)
+![YouTube Music](https://img.shields.io/badge/YouTube%20Music-API-red?logo=youtube)
+![License](https://img.shields.io/github/license/mahdi-y/Spotify2YoutubeMusic)
+
+---
+
+```
+_________              __  .__  _____       ________ _____.___.              __       ___.             _____               .__        
+ /   _____/_____   _____/  |_|__|/ ____\__.__.\_____  \\__  |   | ____  __ ___/  |_ __ _\_ |__   ____   /     \  __ __  _____|__| ____  
+ \_____  \\____ \ /  _ \   __\  \   __<   |  | /  ____/ /   |   |/  _ \|  |  \   __\  |  \ __ \_/ __ \ /  \ /  \|  |  \/  ___/  |/ ___\ 
+ /        \  |_> >  <_> )  | |  ||  |  \___  |/       \ \____   (  <_> )  |  /|  | |  |  / \_\ \  ___//    Y    \  |  /\___ \|  \  \___ 
+/_______  /   __/ \____/|__| |__||__|  / ____|\_______ \/ ______|\____/|____/ |__| |____/|___  /\___  >____|__  /____//____  >__|\___  >
+        \/|__|                         \/             \/\/                                   \/     \/        \/           \/        \/ 
+```
+
+---
 
 ## Table of Contents
 
@@ -10,102 +28,128 @@
 6. [Troubleshooting](#troubleshooting)
 7. [Acknowledgments](#acknowledgments)
 
+---
+
 ## Introduction
 
-This Python script allows you to copy playlists from Spotify to YouTube Music. It fetches your Spotify playlists, retrieves their tracks, searches for them on YouTube Music, and creates a new playlist on YouTube Music with the found tracks. This makes it easier to transfer your favorite music between platforms without manual effort.
+**Spotify2YoutubeMusic** is a Python tool that copies your playlists, liked songs, and followed artists from Spotify to YouTube Music. It automates the process of searching for each track or artist on YouTube Music and recreates your music library there.
+
+---
 
 ## Features
 
-- Batch import your Spotify playlists
-- Import all playlists at once
-- Import Liked Songs from Spotify
-- Import Followed Artists from Spotify
-- Progress bar
+- **Batch import** your Spotify playlists
+- **Import all playlists** at once or select specific ones (with range support)
+- **Import Liked Songs** from Spotify
+- **Import Followed Artists** from Spotify
+- **Progress bar** for track processing
+- **Error handling** and retry logic for robust transfers
+
+---
 
 ## Requirements
 
 - Python 3.8+
-- Spotify API credentials
-- YouTube Music authentication headers
-- Command Prompt (cmd) or PowerShell (for Windows users)
-- Terminal (for Linux/macOS users)
+- Spotify API credentials (Client ID & Secret)
+- YouTube Music authentication headers (from your browser)
+- Command Prompt (Windows) or Terminal (Linux/macOS)
+- [ytmusicapi](https://github.com/sigma67/ytmusicapi) and [spotipy](https://spotipy.readthedocs.io/)
 
+---
 
 ## Installation
 
-### Clone the Repository
+### 1. Clone the Repository
 
 ```sh
 git clone https://github.com/mahdi-y/Spotify2YoutubeMusic.git
-```
-```sh
 cd Spotify2YoutubeMusic
 ```
 
-### Set Up a Virtual Environment (Recommended)
+### 2. Set Up a Virtual Environment (Recommended)
 
-##### For Linux/macOS:
-
-```sh
-python -m venv .venv
-```
-```sh
-source .venv/bin/activate  
-```
-```sh
-pip install -r requirements.txt
-```
-
-##### For Windows:
+#### For Linux/macOS:
 
 ```sh
 python -m venv .venv
-```
-```sh
-.venv\Scripts\activate  
-```
-```sh
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+#### For Windows:
+
+```sh
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+---
 
 ## Usage
 
-### Generate Spotify Credentials
+### 1. Generate Spotify Credentials
 
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
-2. Create an app and obtain the **Client ID** and **Client Secret**.
-3. Set the **Redirect URI** to `http://127.0.0.1:8888/callback`.
-4. Check **Web API** in the section right under **Redirect URI**.
-5. Replace the placeholders in the script with your credentials (In **copy_playlists.py** file).
-   
-    `SPOTIFY_CLIENT_ID = 'Your-Spotify-Client-ID'`
+- Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
+- Create an app and obtain your **Client ID** and **Client Secret**.
+- Set the **Redirect URI** to `http://127.0.0.1:8888/callback`.
+- Enable **Web API** access.
+- Open `copy_playlists.py` and replace:
+  ```python
+  SPOTIFY_CLIENT_ID = 'Your-Spotify-Client-ID'
+  SPOTIFY_CLIENT_SECRET = 'Your-Spotify-Client-Secret'
+  ```
 
-    `SPOTIFY_CLIENT_SECRET = 'Your-Spotify-Client-Secret'`
+### 2. Generate YouTube Music Credentials
 
-### Generate YouTube Music Credentials
+- Open YouTube Music in **Firefox** and log in.
+- Press **F12** (or right-click → Inspect) to open Developer Tools.
+- Go to the **Network** tab and reload the page.
+- Click on **Library** in YouTube Music.
+- Filter requests by `/browse` and select a **POST** request with **Status 200**.
+- In **Request Headers**, click **RAW** and copy all headers.
+- Paste them into a file named `raw_headers.txt` in your project directory.
 
-1. Open YouTube Music in **Firefox** and log in.
-2. Press **F12** or right-click and select **Inspect** to open the browser's developer tools.
-3. Go to the **Network** tab and click on **Reload**.
-4. Go back to YouTube Music's interface and click on **Library**.
-5. Go to the **Network** tab again and filter requests by `/browse`.
-6. Select a request and locate the **Request Headers** section (It must be a **POST** request and of **Status 200**).
-7. Click the **RAW** toggle button to view raw headers.
-8. Copy the content and paste it into `raw_headers.txt` in the project directory.
-
-### Run the Script
+### 3. Run the Script
 
 ```sh
 python copy_playlists.py
 ```
 
-Follow the on-screen instructions to select and copy a playlist, liked songs or followed artists.
+- Follow the on-screen prompts to select what you want to copy:
+  - Playlists (all or selected)
+  - Liked Songs
+  - Followed Artists
+
+---
+
+## Visual Workflow
+
+```mermaid
+flowchart TD
+    A[Spotify Account] -->|API| B[Spotify2YoutubeMusic Script]
+    B -->|Search & Match| C[YouTube Music API]
+    C --> D[YouTube Music Account]
+```
+
+---
 
 ## Troubleshooting
 
-- If an error occurs related to **invalid YouTube Music credentials**, it might be because they expire after some time. You will need to regenerate the credentials by following the **Generate YouTube Music Credentials** steps again.
+- **Invalid YouTube Music credentials?**  
+  Credentials may expire. Regenerate them by repeating the steps in [Generate YouTube Music Credentials](#2-generate-youtube-music-credentials).
+
+- **Missing tracks?**  
+  Some tracks may not be available on YouTube Music or may have different metadata.
+
+---
 
 ## Acknowledgments
 
-Special thanks to **Sigma67** for developing [ytmusicapi](https://github.com/sigma67/ytmusicapi), which enables programmatic access to YouTube Music.
+- Thanks to [Sigma67](https://github.com/sigma67/ytmusicapi) for `ytmusicapi`.
+- Thanks to [Spotipy](https://spotipy.readthedocs.io/) for Spotify API access.
+
+---
+
+> **Enjoy your music everywhere!**
 
