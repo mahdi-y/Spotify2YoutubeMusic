@@ -44,8 +44,12 @@ _________              __  .__  _____       ________ _____.___.              __ 
 - **Import all playlists** at once or select specific ones (with range support)
 - **Import Liked Songs** from Spotify
 - **Import Followed Artists** from Spotify
+- - **Smart duplicate detection** - Automatically checks for existing playlists and only adds new songs
+- **Incremental updates** - Run the script multiple times without creating duplicates
 - **Progress bar** for track processing
 - **Error handling** and retry logic for robust transfers
+- **Cross-platform** compatibility (Windows, Linux, macOS)
+- **Easy to use** - Just set your credentials and run the script
 
 ---
 
@@ -144,6 +148,12 @@ flowchart TD
 - **Missing tracks?**  
   Some tracks may not be available on YouTube Music or may have different metadata.
 
+- **Duplicate playlists?**  
+  The script now automatically prevents duplicates. If you have old duplicate playlists, you can manually delete them from YouTube Music.
+  
+- **Rate limits?**
+  If you hit API rate limits, wait a few minutes and try again. The script handles retries automatically.
+  
 ---
 
 ## Acknowledgments
