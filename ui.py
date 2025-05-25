@@ -23,7 +23,7 @@ class Spotify2YTMUI(tk.Tk):
                            padding=[20, 10],
                            font=('Segoe UI', 10))
         self.style.map('Custom.TNotebook.Tab',
-                      background=[('selected', '#0078d4'), ('active', '#404040')])
+                      background=[('selected', '#0078d4'), ('active', '#404044')])
         
         self.style.configure('Custom.TFrame', background='#1e1e1e')
         self.style.configure('Custom.TButton', 
