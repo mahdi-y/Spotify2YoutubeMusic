@@ -7,7 +7,9 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/mahdi-y/Spotify2YoutubeMusic?style=social)
 
 
-![Spotify2YoutubeMusic UI Demo](./S2YM.gif)
+<p align="center">
+  <img src="./S2YM.gif" width="700"/>
+</p>
 
 ---
 
