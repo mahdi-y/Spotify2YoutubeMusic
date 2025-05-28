@@ -6,6 +6,9 @@
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![GitHub Repo stars](https://img.shields.io/github/stars/mahdi-y/Spotify2YoutubeMusic?style=social)
 
+
+![Spotify2YoutubeMusic UI Demo](./S2YM.gif)
+
 ---
 
 ```
@@ -222,6 +225,7 @@ flowchart TD
 **Authentication Problems**
 - **Spotify**: Verify Client ID, Secret, and Redirect URI
 - **YouTube Music**: Re-extract headers if they expire (usually 1-2 weeks)
+- **If you change your Spotify credentials or get authentication errors, delete the `.cache` file in your project folder and try again.**
 
 **Missing Tracks**
 - Some tracks may not be available on YouTube Music
