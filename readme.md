@@ -7,38 +7,61 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/mahdi-y/Spotify2YoutubeMusic?style=social)
 
 
-![Spotify2YoutubeMusic UI Demo](./S2YM.gif)
+<p align="center">
+  <img src="./S2YM.gif" width="700"/>
+</p>
 
 ---
 
-```
-_________              __  .__  _____       ________ _____.___.              __       ___.             _____               .__        
- /   _____/_____   _____/  |_|__|/ ____\__.__.\_____  \\__  |   | ____  __ ___/  |_ __ _\_ |__   ____   /     \  __ __  _____|__| ____  
- \_____  \\____ \ /  _ \   __\  \   __<   |  | /  ____/ /   |   |/  _ \|  |  \   __\  |  \ __ \_/ __ \ /  \ /  \|  |  \/  ___/  |/ ___\ 
- /        \  |_> >  <_> )  | |  ||  |  \___  |/       \ \____   (  <_> )  |  /|  | |  |  / \_\ \  ___//    Y    \  |  /\___ \|  \  \___ 
-/_______  /   __/ \____/|__| |__||__|  / ____|\_______ \/ ______|\____/|____/ |__| |____/|___  /\___  >____|__  /____//____  >__|\___  >
-        \/|__|                         \/             \/\/                                   \/     \/        \/           \/        \/ 
-```
+<p align="center">
+  <img src="./s2ym.png" alt="Spotify2YoutubeMusic Logo" width="800"/>
+</p>
 
 ---
 
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [Features](#features)
-3. [Requirements](#requirements)
-4. [Installation](#installation)
-5. [Usage](#usage)
-6. [User Interface](#user-interface)
-7. [Troubleshooting](#troubleshooting)
-8. [Acknowledgments](#acknowledgments)
-9. [License](#license)
+2. [✨ What's New](#-whats-new)
+3. [Features](#features)
+4. [Requirements](#requirements)
+5. [Installation](#installation)
+6. [Usage](#usage)
+7. [User Interface](#user-interface)
+8. [Advanced Features](#advanced-features)
+9. [Troubleshooting](#troubleshooting)
+10. [Acknowledgments](#acknowledgments)
+11. [License](#license)
 
 ---
 
 ## Introduction
 
 **Spotify2YoutubeMusic** is a powerful Python tool that seamlessly transfers your music library from Spotify to YouTube Music. It features both a modern graphical interface and a command-line interface, making it easy to copy playlists, liked songs, and followed artists between platforms.
+
+---
+
+## ✨ What's New
+
+### **Smart Resume System**
+- **Automatic Header Expiration Detection**: Detects when YouTube Music headers expire and pauses gracefully
+- **Progress Saving**: Automatically saves progress after each batch, not just on errors
+- **Seamless Resume**: After updating expired headers, transfers resume exactly where they left off at the batch level
+
+### **Real-time Progress Tracking**
+- **Batch-level Progress**: Shows detailed progress for each batch being processed and verified
+- **Live Status Updates**: Real-time feedback on search, add, and verification operations
+- **Success Rate Reporting**: Shows exact transfer success rates and detailed logs of any failed tracks
+
+### **API Management**
+- **Dedicated Quota Testing**: New "Test API Quota" functionality to check quotas without running transfers
+- **Intelligent Quota Detection**: Correctly distinguishes between real quota exhaustion and YouTube Music backend delays
+- **Header Validation**: Real-time validation of YouTube Music headers before saving
+
+### **Improved Transfer Process**
+- **Not Found Track Display**: All tracks that couldn't be found on YouTube Music are now displayed in the UI logs
+- **Backend Delay Handling**: Properly handles YouTube Music's playlist count delays (no more false quota warnings)
+- **Optimized Timing**: Smart 3-second delays between batches to balance speed and reliability
 
 ---
 
@@ -51,10 +74,9 @@ _________              __  .__  _____       ________ _____.___.              __ 
 - **Incremental Updates** - Run multiple times without creating duplicates
 - **Real-time Progress Tracking** - Visual progress bars and detailed status updates
 - **Modern GUI Interface** - Beautiful, dark-themed graphical user interface
-- **Command Line Support** - Traditional CLI interface for advanced users
-- **Batch Processing** - Efficient handling of large music libraries
-- **Error Handling** - Robust retry logic and comprehensive error reporting
 - **Cross-platform** - Works on Windows, Linux, and macOS
+- **Resume Capability** - Automatically resume interrupted transfers
+- **Header Expiration Detection** - Smart handling of expired YouTube Music headers
 
 ---
 
@@ -120,11 +142,7 @@ pip install spotipy ytmusicapi tqdm
 2. Create a new app
 3. Note your **Client ID** and **Client Secret**
 4. Set **Redirect URI** to: `http://127.0.0.1:8888/callback`
-5. Update `copy_playlists.py`:
-   ```python
-   SPOTIFY_CLIENT_ID = 'your-client-id-here'
-   SPOTIFY_CLIENT_SECRET = 'your-client-secret-here'
-   ```
+5. Enter credentials in the Settings dialog when prompted
 
 ### 2. Generate YouTube Music Headers
 
@@ -135,18 +153,13 @@ pip install spotipy ytmusicapi tqdm
 5. Click **Library** in YouTube Music
 6. Filter by `/browse` and find a **POST** request
 7. Right-click → Copy → Copy Request Headers
-8. Save headers to `raw_headers.txt` in the project folder
+8. Paste headers in the Settings dialog
 
 ### 3. Run the Application
 
 #### Graphical Interface (Recommended):
 ```bash
 python ui.py
-```
-
-#### Command Line Interface:
-```bash
-python copy_playlists.py
 ```
 
 ---
@@ -160,94 +173,72 @@ python copy_playlists.py
 - **Real-time Progress** - Live progress bars and status updates
 - **Output Logging** - Detailed transfer logs with clear indicators
 - **Playlist Selection** - Choose specific playlists or transfer all at once
+- **Settings Management** - Built-in credentials and headers management with validation
 
 ### Playlists Tab
 - Load and view all your Spotify playlists
 - Select multiple playlists for transfer
 - One-click "Copy All" functionality
 - Real-time search progress with track names
+- **Resume Support**: Automatically resumes interrupted transfers
 
 ### Liked Songs Tab
 - Transfer all liked songs to YouTube Music
 - Creates a dedicated "Liked Songs from Spotify" playlist
 - Handles large libraries efficiently
+- **Smart Batching**: Processes in batches for better reliability
 
 ### Artists Tab
 - Subscribe to followed Spotify artists
 - Batch processing for multiple artists
 - Automatic matching and subscription
 
----
-
-## Visual Workflow
-
-```mermaid
-flowchart TD
-    A[Spotify Account] -->|Fetch Data| B[Spotify2YoutubeMusic]
-    B -->|Search & Match| C[YouTube Music API]
-    C -->|Transfer Content| D[YouTube Music Account]
-    
-    E[GUI Interface] --> B
-    F[CLI Interface] --> B
-    
-    B --> G[Playlists]
-    B --> H[Liked Songs] 
-    B --> I[Artists]
-```
+### Settings Dialog
+- **Spotify Configuration**: Enter Client ID, Secret, and Redirect URI
+- **YouTube Music Headers**: Paste raw browser headers with real-time validation
+- **Header Testing**: Built-in header validation before saving
+- **Built-in Instructions**: Step-by-step guides for getting credentials
 
 ---
 
-## Advanced Features
-
-### Smart Duplicate Handling
-- Automatically detects existing playlists
-- Only adds new songs to prevent duplicates
-- Preserves existing playlist structure
-
-### Progress Tracking
-- Real-time progress bars
-- Detailed status messages
-- Track-by-track search updates
-- Comprehensive error reporting
-
-### Error Recovery
-- Automatic retry for failed requests
-- Rate limit handling
-- Network timeout protection
-- Detailed error logging
-
----
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Authentication Problems**
-- **Spotify**: Verify Client ID, Secret, and Redirect URI
-- **YouTube Music**: Re-extract headers if they expire (usually 1-2 weeks)
-- **If you change your Spotify credentials or get authentication errors, delete the `.cache` file in your project folder and try again.**
+**Header Expiration (New Handling)**
+- Headers typically expire every 20-30 minutes
+- The app now automatically detects expiration and pauses gracefully
+- Progress is saved at the batch level, so you resume exactly where you left off
+- Simply update headers in Settings and the transfer continues automatically
 
-**Missing Tracks**
-- Some tracks may not be available on YouTube Music
+**Transfer Interruptions (Enhanced)**
+- Resume functionality works at the batch level for maximum efficiency
+- Check the `progress_*.json` files to see saved state
+
+**Missing Tracks (Improved Display)**
+- Missing tracks are now clearly displayed in the UI output log
+- Each playlist shows exactly which tracks couldn't be found
+- Some tracks may not be available on YouTube Music due to licensing
 - Alternative versions might be found instead
-- Check the output log for details
 
-**Rate Limiting**
-- Built-in retry logic handles most cases
-- Wait a few minutes if persistent issues occur
-- Consider reducing batch sizes for large libraries
+**Backend Delays (No More False Warnings)**
+- YouTube Music sometimes delays updating playlist track counts
+- The app now correctly identifies this as a backend delay, not quota exhaustion
+- Wait a few minutes (sometimes it may take a while) and check your playlist - the tracks should appear
+- No longer shows misleading "quota exhaustion" messages for this issue
 
-**UI Issues**
-- Ensure Python has tkinter support
-- Update to latest Python version if needed
-- Run `python -m tkinter` to test GUI support
+**Authentication Problems**
+- **Spotify**: Verify Client ID, Secret, and Redirect URI in Settings
+- **YouTube Music**: Re-extract headers if they expire or validation fails
+- **Settings now validate headers in real-time before saving**
+- Delete the `.cache` file if you get Spotify authentication errors
 
-### Getting Help
+### New Features for Debugging
 
-1. Check the output log for detailed error messages
-2. Verify your API credentials are correct
-3. Ensure stable internet connection
-4. Try the CLI version if GUI issues persist
+1. **Enhanced Logging**: More detailed output shows exactly what's happening at each step
+2. **Progress Files**: Check `progress_*.json` files to see exactly where transfers stopped
+3. **Header Validation**: Settings dialog now validates headers before saving
 
 ---
 
@@ -257,9 +248,10 @@ flowchart TD
 Spotify2YoutubeMusic/
 ├── copy_playlists.py      # Main script with CLI interface
 ├── ui.py                  # Modern GUI application
-├── raw_headers.txt        # YouTube Music headers (you create this)
-├── browser.json          # Generated YTMusic config
-├── requirements.txt       # Python dependencies
+├── config.json           # Configuration file (auto-generated)
+├── progress_*.json       # Progress files for resume functionality (auto-generated)
+├── browser.json          # YouTube Music API config (auto-generated)
+├── requirements.txt      # Python dependencies
 ├── README.md             # This file
 └── LICENSE               # MIT License
 ```
@@ -305,7 +297,9 @@ This tool is for personal use only. Please respect the terms of service of both 
 
 ### **Enjoy Your Music Everywhere!**
 
-*Transfer your music library seamlessly between platforms*
+*Transfer your music library seamlessly between platforms with smart resume, verification, and progress tracking*
+
+**Latest: Automatic resume on header expiration • Batch verification • Real-time progress tracking • Enhanced reliability**
 
 </div>
 
