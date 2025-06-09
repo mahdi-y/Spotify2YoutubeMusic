@@ -802,5 +802,94 @@ def perform_quota_check():
         print(f"❌ YouTube Music: {ytm_msg}")
         return False, f"Spotify: {spotify_msg}\nYouTube Music: {ytm_msg}"
 
+def add_tracks_with_delayed_verification(
+    playlist_id, track_ids, batch_size=5, retry_attempts=3, 
+    batch_delay=5, verification_delay=30, progress_callback=None,
+    start_batch_index=0  
+):
+    
+    successfully_added = []
+    failed_batches = []
+    
+    try:
+        total_batches = (len(track_ids) + batch_size - 1) // batch_size
+        
+        for i in range(start_batch_index * batch_size, len(track_ids), batch_size):
+            batch = track_ids[i:i + batch_size]
+            batch_num = (i // batch_size) + 1
+            current_batch_index = i // batch_size  
+            
+            attempt = 0
+            while attempt < retry_attempts:
+                try:
+                    if not test_ytmusic_connection():
+                        raise HeaderExpiredError("Headers expired", batch_index=current_batch_index)
+                    
+                    print(f"Adding batch {batch_num}/{total_batches}: {len(batch)} tracks")
+                    get_ytmusic_client().add_playlist_items(playlistId=playlist_id, videoIds=batch)
+                    successfully_added.extend(batch)
+                    break
+                    
+                except Exception as e:
+                    error_str = str(e).lower()
+                    if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
+                        raise HeaderExpiredError("Headers expired", batch_index=current_batch_index)
+                    elif "HTTP 409" in str(e):
+                        print(f"Conflict error for batch {batch_num}. Assuming success...")
+                        successfully_added.extend(batch)
+                        break
+                    else:
+                        attempt += 1
+                        print(f"Batch {batch_num} attempt {attempt} failed: {e}")
+                        if attempt < retry_attempts:
+                            time.sleep(batch_delay * attempt)
+            else:
+                print(f"❌ Batch {batch_num} failed after all attempts")
+                failed_batches.append(batch)
+            
+            if progress_callback:
+                progress_callback(len(successfully_added))
+            
+            time.sleep(batch_delay)
+        
+        if start_batch_index > 0:
+            try:
+                progress_file = f"progress_{playlist_id.replace(' ', '_').replace('/', '_')}.json"
+                if os.path.exists(progress_file):
+                    with open(progress_file, "r", encoding="utf-8") as f:
+                        progress_data = json.load(f)
+                    all_track_ids = progress_data.get("ytm_video_ids", track_ids)
+                else:
+                    all_track_ids = track_ids
+            except Exception:
+                all_track_ids = track_ids
+        else:
+            all_track_ids = track_ids.copy()
+
+        if successfully_added or start_batch_index > 0:
+            print(f"\n⏳ Waiting {verification_delay}s before final verification...")
+            time.sleep(verification_delay)
+
+            print("🔍 Performing final verification...")
+            final_tracks = get_ytm_playlist_song_video_ids(playlist_id)
+            actually_added = [vid for vid in all_track_ids if vid in final_tracks]
+
+            print(f"📊 Final Results:")
+            print(f"   Attempted: {len(all_track_ids)} tracks")
+            print(f"   Verified: {len(actually_added)} tracks")
+            print(f"   Missing: {len(all_track_ids) - len(actually_added)} tracks")
+            print(f"   Success Rate: {(len(actually_added)/len(all_track_ids)*100):.1f}%")
+
+            return actually_added, failed_batches
+
+        return successfully_added, failed_batches
+        
+        
+    except HeaderExpiredError as e:
+        raise e
+    except Exception as e:
+        print(f"Error in delayed verification method: {e}")
+        return successfully_added, failed_batches
+
 if __name__ == "__main__":
     copy_spotify_to_ytm()
