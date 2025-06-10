@@ -1,10 +1,12 @@
 # Spotify ➡️ YouTube Music Playlist Copier
 
-![Python](https://img.shields.io/badge/python-v3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white)
-![Spotify](https://img.shields.io/badge/spotify-API-1ed760.svg?style=for-the-badge&logo=spotify&logoColor=white)
-![YouTube Music](https://img.shields.io/badge/youtube%20music-API-red.svg?style=for-the-badge&logo=youtube&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge&logo=opensourceinitiative&logoColor=white&color=#3DA638)
-![Stars](https://img.shields.io/github/stars/mahdi-y/Spotify2YoutubeMusic?style=for-the-badge&logo=github&color=yellow&logoColor=white)
+<p align="center">
+  <img src="https://img.shields.io/badge/python-v3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/spotify-API-1ed760.svg?style=for-the-badge&logo=spotify&logoColor=white" alt="Spotify">
+  <img src="https://img.shields.io/badge/youtube%20music-API-red.svg?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube Music">
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge&logo=opensourceinitiative&logoColor=white&color=#3DA638" alt="License">
+  <img src="https://img.shields.io/github/stars/mahdi-y/Spotify2YoutubeMusic?style=for-the-badge&logo=github&color=yellow&logoColor=white" alt="Stars">
+</p>
 
 <p align="center">
   <img src="./S2YM.gif" width="700"/>
