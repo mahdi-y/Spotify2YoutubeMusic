@@ -17,6 +17,13 @@
   <img src="./s2ym.png" alt="Spotify2YoutubeMusic Logo" width="800"/>
 </p>
 
+### ✨ New: Easy Setup Scripts
+
+- **S2YM.bat** (Windows) and **S2YM.sh** (macOS/Linux) now provide a one-step setup and launch experience.
+- No need to manually clone the repo or install dependencies—just run the script!
+- The scripts check for Python 3.8+, Git, set up a virtual environment, install all requirements, and launch the app.
+- ASCII art and clear progress messages make the setup process friendlier and more visual.
+
 ---
 
 ## Table of Contents
@@ -104,7 +111,7 @@
 
 ---
 
-## Installation
+## Installation (Manual)
 
 ### 1. Clone the Repository
 
@@ -119,20 +126,18 @@ cd Spotify2YoutubeMusic
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt
 ```
 
 #### Linux/macOS:
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
 ```
 
 ### 3. Install Dependencies
 
 ```bash
-pip install spotipy ytmusicapi tqdm
+pip install -r requirements.txt
 ```
 
 ---
@@ -267,6 +272,8 @@ Spotify2YoutubeMusic/
 ├── progress_*.json       # Progress files for resume functionality (auto-generated)
 ├── browser.json          # YouTube Music API config (auto-generated)
 ├── requirements.txt      # Python dependencies
+├── S2YM.bat              # Windows auto-setup & launcher script (NEW)
+├── S2YM.sh               # macOS/Linux auto-setup & launcher script (NEW)
 ├── README.md             # This file
 └── LICENSE               # MIT License
 ```
@@ -314,7 +321,7 @@ This tool is for personal use only. Please respect the terms of service of both 
 
 *Transfer your music library seamlessly between platforms with smart resume, verification, and progress tracking*
 
-**Latest: Batch size control • Automatic resume on header expiration • Batch verification • Real-time progress tracking • Enhanced reliability**
+**Latest: Batch size control • Automatic resume on header expiration • Batch verification • Real-time progress tracking • Enhanced reliability • Easy setup scripts**
 
 </div>
 
