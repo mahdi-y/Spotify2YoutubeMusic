@@ -43,25 +43,33 @@
 
 ## ✨ What's New
 
+### **Batch Size Control (NEW)**
+- **Adjustable Batch Size:** You can now set how many tracks are processed together (1–20) using a slider in the main interface.
+- **Quick Presets:** Instantly set Safe, Balanced, Fast, or Max batch sizes with one click.
+- **Live Guidance:** Color-coded descriptions help you pick the best setting for your connection and reliability needs.
+
 ### **Smart Resume System**
-- **Automatic Header Expiration Detection**: Detects when YouTube Music headers expire and pauses gracefully
-- **Progress Saving**: Automatically saves progress after each batch, not just on errors
-- **Seamless Resume**: After updating expired headers, transfers resume exactly where they left off at the batch level
+- **Automatic Header Expiration Detection:** Detects when YouTube Music headers expire and pauses gracefully.
+- **Progress Saving:** Automatically saves progress after each batch, not just on errors.
+- **Seamless Resume:** After updating expired headers, transfers resume exactly where they left off at the batch level.
 
 ### **Real-time Progress Tracking**
-- **Batch-level Progress**: Shows detailed progress for each batch being processed and verified
-- **Live Status Updates**: Real-time feedback on search, add, and verification operations
-- **Success Rate Reporting**: Shows exact transfer success rates and detailed logs of any failed tracks
+- **Batch-level Progress:** Shows detailed progress for each batch being processed and verified.
+- **Live Status Updates:** Real-time feedback on search, add, and verification operations.
+- **Success Rate Reporting:** Shows exact transfer success rates and detailed logs of any failed tracks.
+
+### **Improved Verification**
+- **Whole Playlist Verification:** After any interruption, the app verifies all tracks that should be in the playlist, not just those added after resuming, for accurate success reporting.
 
 ### **API Management**
-- **Dedicated Quota Testing**: New "Test API Quota" functionality to check quotas without running transfers
-- **Intelligent Quota Detection**: Correctly distinguishes between real quota exhaustion and YouTube Music backend delays
-- **Header Validation**: Real-time validation of YouTube Music headers before saving
+- **Dedicated Quota Testing:** New "Test API Quota" functionality to check quotas without running transfers.
+- **Intelligent Quota Detection:** Correctly distinguishes between real quota exhaustion and YouTube Music backend delays.
+- **Header Validation:** Real-time validation of YouTube Music headers before saving.
 
 ### **Improved Transfer Process**
-- **Not Found Track Display**: All tracks that couldn't be found on YouTube Music are now displayed in the UI logs
-- **Backend Delay Handling**: Properly handles YouTube Music's playlist count delays (no more false quota warnings)
-- **Optimized Timing**: Smart 3-second delays between batches to balance speed and reliability
+- **Not Found Track Display:** All tracks that couldn't be found on YouTube Music are now displayed in the UI logs.
+- **Backend Delay Handling:** Properly handles YouTube Music's playlist count delays (no more false quota warnings).
+- **Optimized Timing:** Smart 3-second delays between batches to balance speed and reliability.
 
 ---
 
@@ -77,6 +85,7 @@
 - **Cross-platform** - Works on Windows, Linux, and macOS
 - **Resume Capability** - Automatically resume interrupted transfers
 - **Header Expiration Detection** - Smart handling of expired YouTube Music headers
+- **Batch Size Control** - Fine-tune reliability and speed for large playlists (NEW)
 
 ---
 
@@ -174,19 +183,25 @@ python ui.py
 - **Output Logging** - Detailed transfer logs with clear indicators
 - **Playlist Selection** - Choose specific playlists or transfer all at once
 - **Settings Management** - Built-in credentials and headers management with validation
+- **Batch Size Control** - Instantly adjust batch size with a slider and quick preset buttons (NEW)
+
+### Batch Size Control (NEW)
+- **Adjustable Batch Size:** Choose how many tracks are processed together (1–20) using a slider in the main interface.
+- **Quick Presets:** Instantly set Safe, Balanced, Fast, or Max batch sizes with one click.
+- **Live Guidance:** Color-coded descriptions help you pick the best setting for your connection and reliability needs.
 
 ### Playlists Tab
 - Load and view all your Spotify playlists
 - Select multiple playlists for transfer
 - One-click "Copy All" functionality
 - Real-time search progress with track names
-- **Resume Support**: Automatically resumes interrupted transfers
+- **Resume Support:** Automatically resumes interrupted transfers
 
 ### Liked Songs Tab
 - Transfer all liked songs to YouTube Music
 - Creates a dedicated "Liked Songs from Spotify" playlist
 - Handles large libraries efficiently
-- **Smart Batching**: Processes in batches for better reliability
+- **Smart Batching:** Processes in batches for better reliability
 
 ### Artists Tab
 - Subscribe to followed Spotify artists
@@ -194,10 +209,10 @@ python ui.py
 - Automatic matching and subscription
 
 ### Settings Dialog
-- **Spotify Configuration**: Enter Client ID, Secret, and Redirect URI
-- **YouTube Music Headers**: Paste raw browser headers with real-time validation
-- **Header Testing**: Built-in header validation before saving
-- **Built-in Instructions**: Step-by-step guides for getting credentials
+- **Spotify Configuration:** Enter Client ID, Secret, and Redirect URI
+- **YouTube Music Headers:** Paste raw browser headers with real-time validation
+- **Header Testing:** Built-in header validation before saving
+- **Built-in Instructions:** Step-by-step guides for getting credentials
 
 ---
 
@@ -229,16 +244,16 @@ python ui.py
 - No longer shows misleading "quota exhaustion" messages for this issue
 
 **Authentication Problems**
-- **Spotify**: Verify Client ID, Secret, and Redirect URI in Settings
-- **YouTube Music**: Re-extract headers if they expire or validation fails
+- **Spotify:** Verify Client ID, Secret, and Redirect URI in Settings
+- **YouTube Music:** Re-extract headers if they expire or validation fails
 - **Settings now validate headers in real-time before saving**
 - Delete the `.cache` file if you get Spotify authentication errors
 
 ### New Features for Debugging
 
-1. **Enhanced Logging**: More detailed output shows exactly what's happening at each step
-2. **Progress Files**: Check `progress_*.json` files to see exactly where transfers stopped
-3. **Header Validation**: Settings dialog now validates headers before saving
+1. **Enhanced Logging:** More detailed output shows exactly what's happening at each step
+2. **Progress Files:** Check `progress_*.json` files to see exactly where transfers stopped
+3. **Header Validation:** Settings dialog now validates headers before saving
 
 ---
 
@@ -299,7 +314,7 @@ This tool is for personal use only. Please respect the terms of service of both 
 
 *Transfer your music library seamlessly between platforms with smart resume, verification, and progress tracking*
 
-**Latest: Automatic resume on header expiration • Batch verification • Real-time progress tracking • Enhanced reliability**
+**Latest: Batch size control • Automatic resume on header expiration • Batch verification • Real-time progress tracking • Enhanced reliability**
 
 </div>
 
