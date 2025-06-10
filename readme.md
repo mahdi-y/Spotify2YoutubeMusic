@@ -1,11 +1,10 @@
 # Spotify ➡️ YouTube Music Playlist Copier
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python)
-![Spotify API](https://img.shields.io/badge/Spotify-API-green?logo=spotify)
-![YouTube Music](https://img.shields.io/badge/YouTube%20Music-API-red?logo=youtube)
-![License](https://img.shields.io/badge/License-MIT-yellow)
-![GitHub Repo stars](https://img.shields.io/github/stars/mahdi-y/Spotify2YoutubeMusic?style=social)
-
+![Python](https://img.shields.io/badge/python-v3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white)
+![Spotify](https://img.shields.io/badge/spotify-API-1ed760.svg?style=for-the-badge&logo=spotify&logoColor=white)
+![YouTube Music](https://img.shields.io/badge/youtube%20music-API-red.svg?style=for-the-badge&logo=youtube&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge&logo=opensourceinitiative&logoColor=white&color=#3DA638)
+![Stars](https://img.shields.io/github/stars/mahdi-y/Spotify2YoutubeMusic?style=for-the-badge&logo=github&color=yellow&logoColor=white)
 
 <p align="center">
   <img src="./S2YM.gif" width="700"/>
@@ -14,7 +13,8 @@
 ---
 
 <p align="center">
-  <img src="./s2ym.png" alt="Spotify2YoutubeMusic Logo" width="800"/>
+  <img src="./s2ym.png" alt="Spotify2YoutubeMusic Logo" width="800"/> 
+
 </p>
 
 ### ✨ New: Easy Setup Scripts
@@ -32,13 +32,15 @@
 2. [✨ What's New](#-whats-new)
 3. [Features](#features)
 4. [Requirements](#requirements)
-5. [Installation](#installation)
-6. [Usage](#usage)
-7. [User Interface](#user-interface)
-8. [Advanced Features](#advanced-features)
+5. [🚀 Quick Start (Recommended)](#-quick-start-recommended)
+6. [Installation (Manual)](#installation-manual)
+7. [Usage](#usage)
+8. [User Interface](#user-interface)
 9. [Troubleshooting](#troubleshooting)
-10. [Acknowledgments](#acknowledgments)
-11. [License](#license)
+10. [File Structure](#file-structure)
+11. [Contributing](#contributing)
+12. [Acknowledgments](#acknowledgments)
+13. [License](#license)
 
 ---
 
@@ -108,6 +110,34 @@
 - `ytmusicapi` - YouTube Music API wrapper
 - `tqdm` - Progress bars
 - `tkinter` - GUI framework (usually included with Python)
+
+---
+
+## 🚀 Quick Start (Recommended)
+
+Skip the manual installation! Use these one-liner commands to automatically download, set up, and launch the app:
+
+#### **Windows (PowerShell):**
+```powershell
+iwr -useb https://raw.githubusercontent.com/mahdi-y/Spotify2YoutubeMusic/master/S2YM.bat -OutFile S2YM.bat; ./S2YM.bat
+```
+
+#### **macOS/Linux:**
+```bash
+curl -O https://raw.githubusercontent.com/mahdi-y/Spotify2YoutubeMusic/master/S2YM.sh && bash S2YM.sh
+```
+
+**What these commands do:**
+- Download the setup script for your platform
+- Check for Python 3.8+ and Git
+- Clone or update the repository  
+- Set up a virtual environment
+- Install all dependencies
+- Launch the app automatically
+
+**How to run:**
+- **Windows:** Open PowerShell, paste the command, and press Enter
+- **macOS/Linux:** Open Terminal, paste the command, and press Enter
 
 ---
 
@@ -221,7 +251,6 @@ python ui.py
 
 ---
 
-
 ## Troubleshooting
 
 ### Common Issues
@@ -324,4 +353,3 @@ This tool is for personal use only. Please respect the terms of service of both 
 **Latest: Batch size control • Automatic resume on header expiration • Batch verification • Real-time progress tracking • Enhanced reliability • Easy setup scripts**
 
 </div>
-
