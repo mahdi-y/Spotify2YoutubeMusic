@@ -692,7 +692,7 @@ def check_api_quota():
         if not test_playlist_id:
             return False, "Failed to create test playlist (quota or headers issue)"
 
-        test_video_id = 'dQw4w9WgXcQ'
+        test_video_id = 'lYBUbBu4W08'
         try:
             ytmusic.add_playlist_items(test_playlist_id, [test_video_id])
         except Exception as e:
