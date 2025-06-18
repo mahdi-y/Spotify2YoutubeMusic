@@ -197,7 +197,7 @@ pip install -r requirements.txt
 3. Press **F12** to open Developer Tools
 4. Go to **Network** tab
 5. Click **Library** in YouTube Music
-6. Filter by `/browse` and find a **POST** request
+6. Filter by `/browse` and find a **POST** request `(You have to type /browse in the search bar)`
 7. Right-click → Copy → Copy Request Headers
 8. Paste headers in the Settings dialog
 
