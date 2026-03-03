@@ -176,6 +176,133 @@ def get_ytm_playlist_song_video_ids(playlist_id):
         print(f"Error fetching playlist tracks: {e}")
     return video_ids
 
+def _is_auth_error(exception):
+    error_str = str(exception).lower()
+    return "401" in error_str or "403" in error_str or "unauthorized" in error_str
+
+def _normalize_delay_seconds(delay_seconds, default=1.5):
+    try:
+        delay = float(delay_seconds)
+        return max(0.0, delay)
+    except (TypeError, ValueError):
+        return default
+
+def _deduplicate_video_ids(video_ids):
+    unique_video_ids = []
+    seen = set()
+    for video_id in video_ids:
+        if not video_id or video_id in seen:
+            continue
+        seen.add(video_id)
+        unique_video_ids.append(video_id)
+    return unique_video_ids
+
+def _extract_like_targets_from_playlist(playlist_id, ytm_client):
+    targets = []
+    playlist = ytm_client.get_playlist(playlist_id, limit=None)
+    for track in playlist.get('tracks', []):
+        if not track:
+            continue
+        video_id = track.get('videoId')
+        if not video_id:
+            continue
+        title = track.get('title', 'Unknown track')
+        artist_names = ", ".join(
+            artist.get('name', '') for artist in track.get('artists', []) if artist.get('name')
+        )
+        targets.append({
+            "video_id": video_id,
+            "title": title,
+            "artists": artist_names
+        })
+    return targets
+
+def like_tracks_on_ytm(
+    track_video_ids=None,
+    playlist_id=None,
+    delay_seconds=1.5,
+    progress_callback=None,
+    error_callback=None,
+    control_callback=None,
+    ytm_client=None
+):
+    if track_video_ids is None and not playlist_id:
+        raise ValueError("Either track_video_ids or playlist_id must be provided.")
+
+    client = ytm_client if ytm_client is not None else get_ytmusic_client()
+    if client is None:
+        raise ValueError("YouTube Music client is not initialized.")
+
+    targets = []
+    if track_video_ids is not None:
+        for video_id in _deduplicate_video_ids(track_video_ids):
+            targets.append({
+                "video_id": video_id,
+                "title": "Unknown track",
+                "artists": ""
+            })
+
+    if playlist_id:
+        targets.extend(_extract_like_targets_from_playlist(playlist_id, client))
+
+    unique_targets = []
+    seen = set()
+    for target in targets:
+        video_id = target.get("video_id")
+        if not video_id or video_id in seen:
+            continue
+        seen.add(video_id)
+        unique_targets.append(target)
+
+    total = len(unique_targets)
+    like_delay = _normalize_delay_seconds(delay_seconds)
+
+    result = {
+        "total": total,
+        "liked": 0,
+        "failed": 0,
+        "skipped": max(0, len(targets) - total),
+        "cancelled": False,
+        "failed_items": []
+    }
+
+    for idx, target in enumerate(unique_targets, start=1):
+        if control_callback and not control_callback():
+            result["cancelled"] = True
+            break
+
+        video_id = target["video_id"]
+        title = target.get("title", "Unknown track")
+        artists = target.get("artists", "")
+        display_name = f"{artists} - {title}" if artists else title
+
+        try:
+            client.rate_song(video_id, "LIKE")
+            result["liked"] += 1
+            print(f"[{idx}/{total}] Liked: {display_name}")
+        except Exception as e:
+            if _is_auth_error(e):
+                raise HeaderExpiredError("Headers expired during like operation")
+
+            result["failed"] += 1
+            result["failed_items"].append({
+                "video_id": video_id,
+                "track": display_name,
+                "error": str(e)
+            })
+            error_message = f"[{idx}/{total}] Failed to like '{display_name}': {e}"
+            print(error_message)
+            if error_callback:
+                error_callback(error_message)
+
+        if progress_callback:
+            progress_callback(idx, total, target)
+
+        if idx < total and like_delay > 0:
+            time.sleep(like_delay)
+
+    return result
+
 def create_or_get_ytm_playlist(playlist_name):
     existing = get_ytm_playlist_by_name(playlist_name)
     if existing:
@@ -581,6 +708,17 @@ def copy_spotify_to_ytm():
             if not liked_songs:
                 print("No liked songs found on Spotify.")
                 return
+
+            like_choice = input(
+                "Also mark matched tracks as liked in YouTube Music? (yes/no): "
+            ).strip().lower()
+            like_on_transfer = like_choice in ("y", "yes")
+            like_delay_seconds = 1.5
+            if like_on_transfer:
+                delay_value = input("Delay between like requests in seconds (default 1.5): ").strip()
+                if delay_value:
+                    like_delay_seconds = _normalize_delay_seconds(delay_value)
+
             playlist_name = "Liked Songs from Spotify"
             
             ytm_playlist_id, already_exists = create_or_get_ytm_playlist(playlist_name)
@@ -594,10 +732,12 @@ def copy_spotify_to_ytm():
 
             print("Searching for liked songs on YouTube Music...")
             ytm_video_ids = []
+            matched_video_ids = []
             not_found_tracks = []  
             for track in tqdm(liked_songs, desc="Processing Liked Songs", unit="track"):
                 video_id = search_track_on_ytm(track)
                 if video_id:
+                    matched_video_ids.append(video_id)
                     if video_id not in existing_video_ids:
                         ytm_video_ids.append(video_id)
                 else:
@@ -609,6 +749,22 @@ def copy_spotify_to_ytm():
                 add_tracks_to_ytm_playlist_with_verification(ytm_playlist_id, ytm_video_ids)
             else:
                 print("No new liked songs to add to YouTube Music.")
+
+            if like_on_transfer:
+                like_targets = matched_video_ids if matched_video_ids else ytm_video_ids
+                if like_targets:
+                    print(f"\nApplying likes for {len(_deduplicate_video_ids(like_targets))} matched tracks...")
+                    like_result = like_tracks_on_ytm(
+                        track_video_ids=like_targets,
+                        delay_seconds=like_delay_seconds
+                    )
+                    print(
+                        "Like sync completed: "
+                        f"{like_result['liked']}/{like_result['total']} liked, "
+                        f"{like_result['failed']} failed, {like_result['skipped']} skipped."
+                    )
+                else:
+                    print("No matched tracks available for liking.")
 
             if not_found_tracks:
                 print(f"\nLiked songs not found on YouTube Music:")
