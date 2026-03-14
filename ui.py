@@ -1,4 +1,4 @@
-import tkinter as tk
+﻿import tkinter as tk
 from tkinter import messagebox, ttk
 import threading
 import time
@@ -7,18 +7,26 @@ import json
 import os
 
 def load_config():
-    if os.path.exists("config.json"):
-        try:
-            with open("config.json", "r") as f:
-                return json.load(f)
-        except:
-            pass
-    return {
+    defaults = {
         "spotify_client_id": "",
         "spotify_client_secret": "",
         "spotify_redirect_uri": "http://127.0.0.1:8888/callback",
-        "youtube_headers": ""
+        "youtube_headers": "",
+        "batch_size": 5,
+        "like_liked_songs_on_transfer": False,
+        "like_rate_delay_seconds": 1.5
     }
+
+    if os.path.exists("config.json"):
+        try:
+            with open("config.json", "r") as f:
+                stored = json.load(f)
+            if isinstance(stored, dict):
+                defaults.update(stored)
+                return defaults
+        except:
+            pass
+    return defaults
 
 def save_config(config):
     try:
@@ -619,6 +627,32 @@ class Spotify2YTMUI(tk.Tk):
         self.update_batch_display(value)
         self.append_response(f"⚙️ Batch size set to {value} tracks per batch")
 
+    def get_like_delay_seconds(self):
+        try:
+            delay = float(self.like_delay_var.get())
+            if delay < 0:
+                raise ValueError("Delay cannot be negative")
+        except Exception:
+            delay = 1.5
+            if hasattr(self, "like_delay_var"):
+                self.like_delay_var.set(f"{delay:.1f}")
+        return delay
+
+    def update_liked_delay_state(self):
+        if not hasattr(self, "like_delay_spin"):
+            return
+        state = tk.NORMAL if self.like_liked_songs_var.get() else tk.DISABLED
+        self.like_delay_spin.config(state=state)
+
+    def on_liked_options_changed(self):
+        self.config_data["like_liked_songs_on_transfer"] = bool(self.like_liked_songs_var.get())
+        self.config_data["like_rate_delay_seconds"] = self.get_like_delay_seconds()
+        self.update_liked_delay_state()
+        save_config(self.config_data)
+
+    def on_liked_delay_input(self, _event=None):
+        self.on_liked_options_changed()
+
     def append_response(self, msg):
         self.response_text.config(state="normal")
         self.response_text.insert(tk.END, msg + "\n")
@@ -720,7 +754,58 @@ class Spotify2YTMUI(tk.Tk):
                 text="Copy all your Spotify liked songs to a YouTube Music playlist",
                 font=('Segoe UI', 11),
                 fg='#cccccc',
-                bg='#1e1e1e').pack(pady=(0, 30))
+                bg='#1e1e1e').pack(pady=(0, 20))
+
+        options_frame = tk.Frame(content, bg='#1e1e1e')
+        options_frame.pack(pady=(0, 20))
+
+        self.like_liked_songs_var = tk.BooleanVar(
+            value=bool(self.config_data.get("like_liked_songs_on_transfer", False))
+        )
+        like_checkbox = tk.Checkbutton(
+            options_frame,
+            text="Also mark matched tracks as liked in YouTube Music",
+            variable=self.like_liked_songs_var,
+            command=self.on_liked_options_changed,
+            bg='#1e1e1e',
+            fg='white',
+            activebackground='#1e1e1e',
+            activeforeground='white',
+            selectcolor='#2d2d2d',
+            font=('Segoe UI', 10)
+        )
+        like_checkbox.pack(anchor="w")
+
+        delay_row = tk.Frame(options_frame, bg='#1e1e1e')
+        delay_row.pack(anchor="w", pady=(8, 0))
+
+        tk.Label(
+            delay_row,
+            text="Like delay (sec):",
+            bg='#1e1e1e',
+            fg='#cccccc',
+            font=('Segoe UI', 9)
+        ).pack(side="left", padx=(0, 8))
+
+        self.like_delay_var = tk.StringVar(
+            value=str(self.config_data.get("like_rate_delay_seconds", 1.5))
+        )
+        self.like_delay_spin = tk.Spinbox(
+            delay_row,
+            from_=0,
+            to=10,
+            increment=0.1,
+            width=6,
+            textvariable=self.like_delay_var,
+            command=self.on_liked_options_changed,
+            bg='#404040',
+            fg='white',
+            insertbackground='white'
+        )
+        self.like_delay_spin.pack(side="left")
+        self.like_delay_spin.bind("<FocusOut>", self.on_liked_delay_input)
+        self.like_delay_spin.bind("<Return>", self.on_liked_delay_input)
+        self.update_liked_delay_state()
 
         ttk.Button(content,
                   text="💖 Transfer Liked Songs",
@@ -964,7 +1049,7 @@ class Spotify2YTMUI(tk.Tk):
                 ytm_video_ids = progress["ytm_video_ids"]
                 not_found_tracks = progress["not_found_tracks"]
                 current_batch_index = progress.get("current_batch_index", 0)
-                
+
                 if current_batch_index is None:
                     current_batch_index = 0
                     self.append_response(f"⚠️ Batch index was null, starting from beginning of batching phase")
@@ -998,14 +1083,16 @@ class Spotify2YTMUI(tk.Tk):
 
             try:
                 if progress and ytm_video_ids:
-                    self.append_response(f"📤 Resuming: Adding remaining tracks from batch {current_batch_index + 1}...")
+                    self.append_response(
+                        f"📤 Resuming: adding remaining tracks from batch {current_batch_index + 1}..."
+                    )
                     self.append_response(f"⚙️ Using batch size: {batch_size} tracks per batch")
-                    
+
                     if not self.progress_bar_state["paused"]:
                         self.progressbar["maximum"] = len(ytm_video_ids)
                         completed_tracks = current_batch_index * batch_size
                         self.progressbar["value"] = completed_tracks
-                    
+
                     def progress_callback(current):
                         base = current_batch_index * batch_size
                         total_progress = base + current
@@ -1016,12 +1103,12 @@ class Spotify2YTMUI(tk.Tk):
 
                     def error_callback(msg):
                         self.append_response(msg)
-                    
+
                     try:
                         actually_added, failed_batches = copy_playlists.add_tracks_with_delayed_verification(
                             ytm_playlist_id,
                             ytm_video_ids,
-                            batch_size=batch_size,  
+                            batch_size=batch_size,
                             batch_delay=5,
                             verification_delay=30,
                             progress_callback=progress_callback,
@@ -1029,7 +1116,7 @@ class Spotify2YTMUI(tk.Tk):
                             error_callback=error_callback,
                             control_callback=self.check_control_status
                         )
-                        
+
                         if self.is_cancelled:
                             self.append_response("🛑 Operation cancelled during batch processing.")
                             self.reset_progress_bar()
@@ -1037,35 +1124,45 @@ class Spotify2YTMUI(tk.Tk):
 
                         if not self.progress_bar_state["paused"]:
                             self.progressbar["value"] = len(ytm_video_ids)
-                        
+
                         if len(actually_added) == len(ytm_video_ids):
-                            self.append_response(f"✅ Perfect success! All {len(actually_added)} tracks added to: {name}")
+                            self.append_response(
+                                f"✅ Perfect success! All {len(actually_added)} tracks added to: {name}"
+                            )
                         elif len(actually_added) > 0:
                             success_rate = (len(actually_added) / len(ytm_video_ids)) * 100
-                            self.append_response(f"⚠️ Partial success: {len(actually_added)}/{len(ytm_video_ids)} tracks added ({success_rate:.1f}%)")
-                            self.append_response(f"   Missing {len(ytm_video_ids) - len(actually_added)} tracks may appear later due to YouTube Music delays")
+                            self.append_response(
+                                f"⚠️ Partial success: {len(actually_added)}/{len(ytm_video_ids)} "
+                                f"tracks added ({success_rate:.1f}%)"
+                            )
+                            self.append_response(
+                                f"Missing {len(ytm_video_ids) - len(actually_added)} tracks may appear later "
+                                "due to YouTube Music delays"
+                            )
                         else:
                             self.append_response(f"❌ No tracks were successfully added to: {name}")
-                        
+
                         if failed_batches:
                             failed_count = sum(len(batch) for batch in failed_batches)
-                            self.append_response(f"⚠️ {failed_count} tracks failed during batch adding (network/API issues)")
+                            self.append_response(
+                                f"⚠️ {failed_count} tracks failed during batch adding (network/API issues)"
+                            )
 
                     except copy_playlists.HeaderExpiredError as e:
                         expired_batch_index = getattr(e, "batch_index", current_batch_index)
                         self.append_response(f"🔑 Headers expired during batch {expired_batch_index + 1}")
                         
                         progress_file = copy_playlists.save_progress(
-                            name, len(tracks), len(tracks), ytm_video_ids, not_found_tracks, "playlist", 
+                            name, len(tracks), len(tracks), ytm_video_ids, not_found_tracks, "playlist",
                             current_batch_index=expired_batch_index
                         )
                         self.show_header_expired_dialog(name, progress_file, "playlist")
                         return
-                
+
                 else:
                     for idx in range(start_index, len(tracks)):
                         if not self.check_control_status():
-                            self.append_response("🛑 Operation cancelled.")
+                            self.append_response("Operation cancelled.")
                             self.reset_progress_bar()
                             return
 
@@ -1087,23 +1184,27 @@ class Spotify2YTMUI(tk.Tk):
 
                     if ytm_video_ids:
                         try:
-                            self.append_response(f"📤 Adding {len(ytm_video_ids)} tracks with batch size {batch_size}...")
-                            
+                            self.append_response(
+                                f"📤 Adding {len(ytm_video_ids)} tracks with batch size {batch_size}..."
+                            )
+
                             def progress_callback(current):
                                 base = current_batch_index * batch_size
                                 total_progress = base + current
                                 if not self.progress_bar_state["paused"]:
                                     self.progressbar["value"] = min(total_progress, len(ytm_video_ids))
-                                    self.progress.set(f"Adding tracks: {total_progress}/{len(ytm_video_ids)}")
+                                    self.progress.set(
+                                        f"Adding tracks: {total_progress}/{len(ytm_video_ids)}"
+                                    )
                                     self.update_idletasks()
 
                             def error_callback(msg):
                                 self.append_response(msg)
-                            
+
                             actually_added, failed_batches = copy_playlists.add_tracks_with_delayed_verification(
                                 ytm_playlist_id,
                                 ytm_video_ids,
-                                batch_size=batch_size,  
+                                batch_size=batch_size,
                                 batch_delay=5,
                                 verification_delay=30,
                                 progress_callback=progress_callback,
@@ -1111,7 +1212,7 @@ class Spotify2YTMUI(tk.Tk):
                                 error_callback=error_callback,
                                 control_callback=self.check_control_status
                             )
-                            
+
                             if self.is_cancelled:
                                 self.append_response("🛑 Operation cancelled during batch processing.")
                                 self.reset_progress_bar()
@@ -1119,26 +1220,36 @@ class Spotify2YTMUI(tk.Tk):
 
                             if not self.progress_bar_state["paused"]:
                                 self.progressbar["value"] = len(ytm_video_ids)
-                            
+
                             if len(actually_added) == len(ytm_video_ids):
-                                self.append_response(f"✅ Perfect success! All {len(actually_added)} tracks added to: {name}")
+                                self.append_response(
+                                    f"✅ Perfect success! All {len(actually_added)} tracks added to: {name}"
+                                )
                             elif len(actually_added) > 0:
                                 success_rate = (len(actually_added) / len(ytm_video_ids)) * 100
-                                self.append_response(f"⚠️ Partial success: {len(actually_added)}/{len(ytm_video_ids)} tracks added ({success_rate:.1f}%)")
-                                self.append_response(f"   Missing {len(ytm_video_ids) - len(actually_added)} tracks may appear later due to YouTube Music delays")
+                                self.append_response(
+                                    f"⚠️ Partial success: {len(actually_added)}/{len(ytm_video_ids)} "
+                                    f"tracks added ({success_rate:.1f}%)"
+                                )
+                                self.append_response(
+                                    f"Missing {len(ytm_video_ids) - len(actually_added)} tracks may appear later "
+                                    "due to YouTube Music delays"
+                                )
                             else:
                                 self.append_response(f"❌ No tracks were successfully added to: {name}")
-                        
+
                             if failed_batches:
                                 failed_count = sum(len(batch) for batch in failed_batches)
-                                self.append_response(f"⚠️ {failed_count} tracks failed during batch adding (network/API issues)")
+                                self.append_response(
+                                    f"⚠️ {failed_count} tracks failed during batch adding (network/API issues)"
+                                )
 
                         except copy_playlists.HeaderExpiredError as e:
                             expired_batch_index = getattr(e, "batch_index", 0)
                             self.append_response(f"🔑 Headers expired during batch {expired_batch_index + 1}")
-                            
+
                             progress_file = copy_playlists.save_progress(
-                                name, len(tracks), len(tracks), ytm_video_ids, not_found_tracks, "playlist", 
+                                name, len(tracks), len(tracks), ytm_video_ids, not_found_tracks, "playlist",
                                 current_batch_index=expired_batch_index
                             )
                             self.show_header_expired_dialog(name, progress_file, "playlist")
@@ -1148,49 +1259,60 @@ class Spotify2YTMUI(tk.Tk):
                         if not self.progress_bar_state["paused"]:
                             self.progressbar["maximum"] = 1
                             self.progressbar["value"] = 1
-                    
+
                 if not_found_tracks:
                     self.append_response(f"⚠️ {len(not_found_tracks)} tracks not found on YouTube Music")
-                    for track in not_found_tracks[:10]: 
-                        self.append_response(f"   • {track}")
+                    for track in not_found_tracks[:10]:
+                        self.append_response(f"   {track}")
                     if len(not_found_tracks) > 10:
                         self.append_response(f"   ... and {len(not_found_tracks) - 10} more")
-                
+
                 try:
                     self.append_response(f"📊 Generating verification report for '{name}'...")
                     copy_playlists.verify_transfer_completeness(tracks, ytm_playlist_id, name)
-                    safe_name = "".join([c for c in name if c.isalpha() or c.isdigit() or c==' ']).rstrip().replace(" ", "_")
+                    safe_name = "".join(
+                        [c for c in name if c.isalpha() or c.isdigit() or c == ' ']
+                    ).rstrip().replace(" ", "_")
                     self.append_response(f"📄 Report saved to: migration_report_{safe_name}.json")
                 except Exception as e:
                     self.append_response(f"⚠️ Failed to generate report: {e}")
 
                 copy_playlists.delete_progress(name)
                 self.reset_progress_bar()
-                    
+
             except copy_playlists.HeaderExpiredError:
                 progress_file = copy_playlists.save_progress(
                     name, idx, len(tracks), ytm_video_ids, not_found_tracks, "playlist"
                 )
                 self.show_header_expired_dialog(name, progress_file, "playlist")
                 return
-                
+
         self.progress.set("✅ Playlist transfer completed")
-        self.append_response("🎉 Finished copying all playlists!")
+        self.append_response("🎉 Finished copying all playlists")
         self.after(0, self.hide_control_buttons)
         messagebox.showinfo("Success", "Playlists transferred successfully!")
-
     def _copy_liked_songs(self):
         playlist_name = "Liked Songs from Spotify"
-        
+        like_on_transfer = bool(
+            self.like_liked_songs_var.get()
+            if hasattr(self, "like_liked_songs_var")
+            else self.config_data.get("like_liked_songs_on_transfer", False)
+        )
+        like_delay_seconds = self.get_like_delay_seconds() if hasattr(self, "like_delay_var") else 1.5
+        last_processed_index = 0
+        liked_video_candidates = []
+
         progress = copy_playlists.load_progress(playlist_name)
         if progress:
             self.append_response(f"📁 Found saved progress for '{playlist_name}'. Resuming...")
             liked_songs = copy_playlists.get_spotify_liked_songs()
             start_index = progress["current_track_index"]
+            last_processed_index = start_index
             ytm_video_ids = progress["ytm_video_ids"]
             not_found_tracks = progress["not_found_tracks"]
             current_batch_index = progress.get("current_batch_index", 0)
-            
+            liked_video_candidates = list(ytm_video_ids)
+
             if current_batch_index is None:
                 current_batch_index = 0
                 self.append_response(f"⚠️ Batch index was null, starting from beginning of batching phase")
@@ -1207,16 +1329,16 @@ class Spotify2YTMUI(tk.Tk):
             ytm_video_ids = []
             not_found_tracks = []
             current_batch_index = 0
-        
+
         ytm_playlist_id, already_exists = copy_playlists.create_or_get_ytm_playlist(playlist_name)
         if not ytm_playlist_id:
             self.progress.set("Failed to create playlist")
             self.append_response("❌ Failed to create playlist on YouTube Music")
             return
-        
+
         existing_video_ids = set()
         if already_exists and not progress:
-            self.append_response("📋 Playlist exists, checking for new songs...")
+            self.append_response("Playlist exists, checking for new songs...")
             existing_video_ids = copy_playlists.get_ytm_playlist_song_video_ids(ytm_playlist_id)
 
         if not self.progress_bar_state["paused"]:
@@ -1227,14 +1349,16 @@ class Spotify2YTMUI(tk.Tk):
 
         try:
             if progress and ytm_video_ids:
-                self.append_response(f"📤 Resuming: Adding remaining liked songs from batch {current_batch_index + 1}...")
+                self.append_response(
+                    f"📤 Resuming: adding remaining liked songs from batch {current_batch_index + 1}..."
+                )
                 self.append_response(f"⚙️ Using batch size: {batch_size} tracks per batch")
-                
+
                 if not self.progress_bar_state["paused"]:
                     self.progressbar["maximum"] = len(ytm_video_ids)
                     completed_tracks = current_batch_index * batch_size
                     self.progressbar["value"] = completed_tracks
-                
+
                 def progress_callback(current):
                     base = current_batch_index * batch_size
                     total_progress = base + current
@@ -1245,12 +1369,12 @@ class Spotify2YTMUI(tk.Tk):
 
                 def error_callback(msg):
                     self.append_response(msg)
-                
+
                 try:
-                    actually_added, failed_batches = copy_playlists.add_tracks_with_delayed_verification(
+                    actually_added, _failed_batches = copy_playlists.add_tracks_with_delayed_verification(
                         ytm_playlist_id,
                         ytm_video_ids,
-                        batch_size=batch_size,  
+                        batch_size=batch_size,
                         batch_delay=5,
                         verification_delay=30,
                         progress_callback=progress_callback,
@@ -1258,7 +1382,7 @@ class Spotify2YTMUI(tk.Tk):
                         error_callback=error_callback,
                         control_callback=self.check_control_status
                     )
-                    
+
                     if self.is_cancelled:
                         self.append_response("🛑 Operation cancelled during batch processing.")
                         self.reset_progress_bar()
@@ -1266,27 +1390,33 @@ class Spotify2YTMUI(tk.Tk):
 
                     if not self.progress_bar_state["paused"]:
                         self.progressbar["value"] = len(ytm_video_ids)
-                    
+
                     if len(actually_added) == len(ytm_video_ids):
                         self.append_response(f"✅ Perfect success! All {len(actually_added)} liked songs added")
                     elif len(actually_added) > 0:
                         success_rate = (len(actually_added) / len(ytm_video_ids)) * 100
-                        self.append_response(f"⚠️ Partial success: {len(actually_added)}/{len(ytm_video_ids)} liked songs added ({success_rate:.1f}%)")
-                        self.append_response(f"   Missing {len(ytm_video_ids) - len(actually_added)} tracks may appear later due to YouTube Music delays")
+                        self.append_response(
+                            f"⚠️ Partial success: {len(actually_added)}/{len(ytm_video_ids)} "
+                            f"liked songs added ({success_rate:.1f}%)"
+                        )
                     else:
-                        self.append_response(f"❌ No liked songs were successfully added")
-                        
+                        self.append_response("❌ No liked songs were successfully added")
+
                 except copy_playlists.HeaderExpiredError as e:
                     expired_batch_index = getattr(e, "batch_index", current_batch_index)
                     self.append_response(f"🔑 Headers expired during batch {expired_batch_index + 1}")
-                    
+
                     progress_file = copy_playlists.save_progress(
-                        playlist_name, len(liked_songs), len(liked_songs), ytm_video_ids, not_found_tracks, "liked_songs", 
+                        playlist_name,
+                        len(liked_songs),
+                        len(liked_songs),
+                        ytm_video_ids,
+                        not_found_tracks,
+                        "liked_songs",
                         current_batch_index=expired_batch_index
                     )
                     self.show_header_expired_dialog(playlist_name, progress_file, "liked_songs")
                     return
-            
             else:
                 for idx in range(start_index, len(liked_songs)):
                     if not self.check_control_status():
@@ -1294,13 +1424,16 @@ class Spotify2YTMUI(tk.Tk):
                         self.reset_progress_bar()
                         return
 
+                    last_processed_index = idx
                     track = liked_songs[idx]
                     video_id = copy_playlists.search_track_on_ytm(track)
-                    if video_id and video_id not in existing_video_ids:
-                        ytm_video_ids.append(video_id)
-                    elif not video_id:
+                    if video_id:
+                        liked_video_candidates.append(video_id)
+                        if video_id not in existing_video_ids:
+                            ytm_video_ids.append(video_id)
+                    else:
                         not_found_tracks.append(track)
-                    
+
                     if not self.progress_bar_state["paused"]:
                         self.progressbar["value"] = idx + 1
                         self.progress.set(f"Searching: {idx + 1}/{len(liked_songs)} - {track[:50]}...")
@@ -1312,23 +1445,27 @@ class Spotify2YTMUI(tk.Tk):
 
                 if ytm_video_ids:
                     try:
-                        self.append_response(f"📤 Adding {len(ytm_video_ids)} liked songs with batch size {batch_size}...")
-                        
+                        self.append_response(
+                            f"📤 Adding {len(ytm_video_ids)} liked songs with batch size {batch_size}..."
+                        )
+
                         def progress_callback(current):
                             base = current_batch_index * batch_size
                             total_progress = base + current
                             if not self.progress_bar_state["paused"]:
                                 self.progressbar["value"] = min(total_progress, len(ytm_video_ids))
-                                self.progress.set(f"Adding tracks: {total_progress}/{len(ytm_video_ids)}")
+                                self.progress.set(
+                                    f"Adding tracks: {total_progress}/{len(ytm_video_ids)}"
+                                )
                                 self.update_idletasks()
 
                         def error_callback(msg):
                             self.append_response(msg)
-                        
-                        actually_added, failed_batches = copy_playlists.add_tracks_with_delayed_verification(
+
+                        actually_added, _failed_batches = copy_playlists.add_tracks_with_delayed_verification(
                             ytm_playlist_id,
                             ytm_video_ids,
-                            batch_size=batch_size,  
+                            batch_size=batch_size,
                             batch_delay=5,
                             verification_delay=30,
                             progress_callback=progress_callback,
@@ -1336,7 +1473,7 @@ class Spotify2YTMUI(tk.Tk):
                             error_callback=error_callback,
                             control_callback=self.check_control_status
                         )
-                        
+
                         if self.is_cancelled:
                             self.append_response("🛑 Operation cancelled during batch processing.")
                             self.reset_progress_bar()
@@ -1344,22 +1481,29 @@ class Spotify2YTMUI(tk.Tk):
 
                         if not self.progress_bar_state["paused"]:
                             self.progressbar["value"] = len(ytm_video_ids)
-                        
+
                         if len(actually_added) == len(ytm_video_ids):
                             self.append_response(f"✅ Perfect success! All {len(actually_added)} liked songs added")
                         elif len(actually_added) > 0:
                             success_rate = (len(actually_added) / len(ytm_video_ids)) * 100
-                            self.append_response(f"⚠️ Partial success: {len(actually_added)}/{len(ytm_video_ids)} liked songs added ({success_rate:.1f}%)")
-                            self.append_response(f"   Missing {len(ytm_video_ids) - len(actually_added)} tracks may appear later due to YouTube Music delays")
+                            self.append_response(
+                                f"⚠️ Partial success: {len(actually_added)}/{len(ytm_video_ids)} "
+                                f"liked songs added ({success_rate:.1f}%)"
+                            )
                         else:
-                            self.append_response(f"❌ No liked songs were successfully added")
-                        
+                            self.append_response("❌ No liked songs were successfully added")
+
                     except copy_playlists.HeaderExpiredError as e:
                         expired_batch_index = getattr(e, "batch_index", 0)
                         self.append_response(f"🔑 Headers expired during batch {expired_batch_index + 1}")
-                        
+
                         progress_file = copy_playlists.save_progress(
-                            playlist_name, len(liked_songs), len(liked_songs), ytm_video_ids, not_found_tracks, "liked_songs", 
+                            playlist_name,
+                            len(liked_songs),
+                            len(liked_songs),
+                            ytm_video_ids,
+                            not_found_tracks,
+                            "liked_songs",
                             current_batch_index=expired_batch_index
                         )
                         self.show_header_expired_dialog(playlist_name, progress_file, "liked_songs")
@@ -1369,28 +1513,80 @@ class Spotify2YTMUI(tk.Tk):
                     if not self.progress_bar_state["paused"]:
                         self.progressbar["maximum"] = 1
                         self.progressbar["value"] = 1
-            
+
+            if like_on_transfer:
+                unique_like_targets = list(
+                    dict.fromkeys(liked_video_candidates if liked_video_candidates else ytm_video_ids)
+                )
+                if unique_like_targets:
+                    self.append_response(
+                        f"Applying likes for {len(unique_like_targets)} matched tracks "
+                        f"(delay {like_delay_seconds:.1f}s)..."
+                    )
+
+                    if not self.progress_bar_state["paused"]:
+                        self.progressbar["maximum"] = len(unique_like_targets)
+                        self.progressbar["value"] = 0
+
+                    def like_progress_callback(current, total, _target):
+                        if not self.progress_bar_state["paused"]:
+                            self.progressbar["maximum"] = total
+                            self.progressbar["value"] = current
+                            self.progress.set(f"Liking tracks: {current}/{total}")
+                            self.update_idletasks()
+
+                    def like_error_callback(message):
+                        self.append_response(message)
+
+                    like_result = copy_playlists.like_tracks_on_ytm(
+                        track_video_ids=unique_like_targets,
+                        delay_seconds=like_delay_seconds,
+                        progress_callback=like_progress_callback,
+                        error_callback=like_error_callback,
+                        control_callback=self.check_control_status
+                    )
+
+                    if like_result.get("cancelled"):
+                        self.append_response("Operation cancelled while applying likes.")
+                        self.reset_progress_bar()
+                        return
+
+                    self.append_response(
+                        "Like sync completed: "
+                        f"{like_result['liked']}/{like_result['total']} liked, "
+                        f"{like_result['failed']} failed, {like_result['skipped']} skipped."
+                    )
+                else:
+                    self.append_response("No matched tracks available for like sync.")
+
             if not_found_tracks:
                 self.append_response(f"⚠️ {len(not_found_tracks)} songs not found on YouTube Music")
-                for track in not_found_tracks[:10]:  
-                    self.append_response(f"   • {track}")
+                for track in not_found_tracks[:10]:
+                    self.append_response(f"   {track}")
                 if len(not_found_tracks) > 10:
                     self.append_response(f"   ... and {len(not_found_tracks) - 10} more")
-                        
+
             try:
                 self.append_response(f"📊 Generating verification report for '{playlist_name}'...")
                 copy_playlists.verify_transfer_completeness(liked_songs, ytm_playlist_id, playlist_name)
-                safe_name = "".join([c for c in playlist_name if c.isalpha() or c.isdigit() or c==' ']).rstrip().replace(" ", "_")
+                safe_name = "".join(
+                    [c for c in playlist_name if c.isalpha() or c.isdigit() or c == ' ']
+                ).rstrip().replace(" ", "_")
                 self.append_response(f"📄 Report saved to: migration_report_{safe_name}.json")
             except Exception as e:
                 self.append_response(f"⚠️ Failed to generate report: {e}")
 
             copy_playlists.delete_progress(playlist_name)
             self.reset_progress_bar()
-                
+
         except copy_playlists.HeaderExpiredError:
             progress_file = copy_playlists.save_progress(
-                playlist_name, idx, len(liked_songs), ytm_video_ids, not_found_tracks, "liked_songs"
+                playlist_name,
+                last_processed_index,
+                len(liked_songs),
+                ytm_video_ids,
+                not_found_tracks,
+                "liked_songs"
             )
             self.show_header_expired_dialog(playlist_name, progress_file, "liked_songs")
             return
@@ -1399,20 +1595,18 @@ class Spotify2YTMUI(tk.Tk):
         self.append_response("🎉 Finished copying liked songs!")
         self.after(0, self.hide_control_buttons)
         messagebox.showinfo("Success", "Liked songs transferred successfully!")
-
     def copy_liked_songs(self):
         if not self.check_configuration():
             return
         if not self.check_api_quotas():
             return
-        
+
         self.is_cancelled = False
         self.is_paused = False
         self.pause_btn.config(text="⏸️ Pause")
         self.show_control_buttons()
 
         threading.Thread(target=self._copy_liked_songs).start()
-
     def copy_followed_artists(self):
         if not self.check_configuration():
             return
@@ -1525,3 +1719,5 @@ if __name__ == "__main__":
     config = load_config()
     app = Spotify2YTMUI()
     app.mainloop()
+
+
