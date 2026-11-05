@@ -165,16 +165,27 @@ def fetch_all_ytm_playlists():
         print(f"Error fetching YTM playlists: {e}")
         return {}
 
-def get_ytm_playlist_song_video_ids(playlist_id):
-    video_ids = set()
-    try:
-        playlist = get_ytmusic_client().get_playlist(playlist_id, limit=10000)
-        for track in playlist.get('tracks', []):
-            if track and 'videoId' in track:
-                video_ids.add(track['videoId'])
-    except Exception as e:
-        print(f"Error fetching playlist tracks: {e}")
-    return video_ids
+def get_ytm_playlist_song_video_ids(playlist_id, raise_on_error=False, max_retries=3):
+    # With raise_on_error=False a persistent failure is indistinguishable from an empty
+    # playlist, so verification code must pass raise_on_error=True.
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            playlist = get_ytmusic_client().get_playlist(playlist_id, limit=10000)
+            return {
+                track['videoId']
+                for track in playlist.get('tracks', [])
+                if track and track.get('videoId')
+            }
+        except Exception as e:
+            last_error = e
+            print(f"Error fetching playlist tracks (attempt {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                time.sleep(5 * (attempt + 1))
+
+    if raise_on_error:
+        raise last_error
+    return set()
 
 def create_or_get_ytm_playlist(playlist_name):
     existing = get_ytm_playlist_by_name(playlist_name)
@@ -754,8 +765,13 @@ def verify_transfer_completeness(spotify_tracks, ytm_playlist_id, playlist_name)
     }
 
     try:
-        current_ids = get_ytm_playlist_song_video_ids(ytm_playlist_id)
-        
+        try:
+            current_ids = get_ytm_playlist_song_video_ids(ytm_playlist_id, raise_on_error=True)
+        except Exception as e:
+            print(f"⚠️  Could not read the playlist back from YouTube Music ({e}).")
+            print("   No report was written, since it would show wrong numbers. Try again later.")
+            return
+
         missing_from_playlist = []
         found_on_ytm_count = 0
         
@@ -782,7 +798,8 @@ def verify_transfer_completeness(spotify_tracks, ytm_playlist_id, playlist_name)
             })
         
         report["stats"]["found_on_ytm"] = found_on_ytm_count
-        report["stats"]["successfully_in_playlist"] = len(current_ids) 
+        report["stats"]["successfully_in_playlist"] = found_on_ytm_count - len(missing_from_playlist)
+        report["stats"]["playlist_total_tracks"] = len(current_ids)
         report["stats"]["missing_from_playlist"] = len(missing_from_playlist)
         report["missing_tracks"] = missing_from_playlist
 
@@ -1025,7 +1042,11 @@ def add_tracks_with_delayed_verification(
             time.sleep(verification_delay)
 
             print("🔍 Performing final verification...")
-            final_tracks = get_ytm_playlist_song_video_ids(playlist_id)
+            try:
+                final_tracks = get_ytm_playlist_song_video_ids(playlist_id, raise_on_error=True)
+            except Exception as e:
+                print(f"⚠️ Could not verify the playlist ({e}). Reporting the tracks YouTube Music accepted instead.")
+                return successfully_added, failed_batches
             actually_added = [vid for vid in all_track_ids if vid in final_tracks]
 
             print(f"📊 Final Results:")
