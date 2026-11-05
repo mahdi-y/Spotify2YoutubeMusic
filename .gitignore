@@ -51,3 +51,4 @@ config.json
 migration_report_*.json
 song_cache.json
 progress*.json
+raw_headers.txt
